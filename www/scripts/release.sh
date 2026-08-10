@@ -132,14 +132,21 @@ if [[ "$DO_IOS" == "1" ]]; then
   echo "==> [iOS] prebuild"
   npx expo prebuild -p ios --clean --non-interactive
 
-  ARCHIVE_PATH="ios/build/quranquiz.xcarchive"
+  # The workspace/scheme name is derived by Expo from expo.name (app.json)
+  # and changes whenever that does — read it back from the generated
+  # project instead of hardcoding it, so a future rename doesn't silently
+  # break this script the way it broke on the "Quran Quiz" rename.
+  IOS_WORKSPACE="$(ls -d ios/*.xcworkspace | head -n1)"
+  IOS_SCHEME="$(basename "$IOS_WORKSPACE" .xcworkspace)"
+
+  ARCHIVE_PATH="ios/build/${IOS_SCHEME}.xcarchive"
   EXPORT_DIR="ios/build/export"
   rm -rf "$ARCHIVE_PATH" "$EXPORT_DIR"
 
-  echo "==> [iOS] xcodebuild archive"
+  echo "==> [iOS] xcodebuild archive (scheme=$IOS_SCHEME)"
   xcodebuild archive \
-    -workspace ios/quranquiz.xcworkspace \
-    -scheme quranquiz \
+    -workspace "$IOS_WORKSPACE" \
+    -scheme "$IOS_SCHEME" \
     -configuration Release \
     -archivePath "$ARCHIVE_PATH" \
     -destination "generic/platform=iOS" \

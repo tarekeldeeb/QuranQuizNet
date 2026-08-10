@@ -100,7 +100,14 @@ export async function acquireGoogleCredential(): Promise<OAuthCredential | null>
     responseType: AuthSession.ResponseType.Code,
     usePKCE: true,
   });
-  const result = await request.promptAsync(GOOGLE_DISCOVERY);
+  // preferEphemeralSession: iOS's ASWebAuthenticationSession shares Safari's
+  // cookie jar by default, so a Google sign-in here would leave persistent
+  // accounts.google.com cookies behind — exactly the kind of cross-session
+  // tracking Apple's App Tracking Transparency guideline (5.1.2(i)) requires
+  // a permission prompt for. Forcing a private/ephemeral session means no
+  // cookies survive the auth flow, so there's nothing to request permission
+  // for. (Rejected under 5.1.2(i) on submission 54c6ee4c, 2026-08-03.)
+  const result = await request.promptAsync(GOOGLE_DISCOVERY, { preferEphemeralSession: true });
   if (result.type !== 'success') return null; // cancelled / dismissed
   const code = result.params.code;
   if (!code) throw new Error('Google sign-in returned no authorization code.');
@@ -145,7 +152,10 @@ export async function acquireFacebookCredential(): Promise<OAuthCredential | nul
     extraParams: { display: 'popup' },
     usePKCE: false, // implicit (token) flow — PKCE params don't apply
   });
-  const result = await request.promptAsync(FACEBOOK_DISCOVERY);
+  // See the matching comment in acquireGoogleCredential above — same fix,
+  // same reason (facebook.com's login cookies otherwise persist in Safari's
+  // shared cookie jar).
+  const result = await request.promptAsync(FACEBOOK_DISCOVERY, { preferEphemeralSession: true });
   if (result.type !== 'success') return null;
   const accessToken = result.params.access_token;
   if (!accessToken) throw new Error('Facebook sign-in returned no access_token.');

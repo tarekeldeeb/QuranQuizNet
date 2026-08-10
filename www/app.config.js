@@ -104,6 +104,7 @@ module.exports = ({ config }) => {
       ...(config.plugins || []),
       './plugins/withFmtConstevalFix',
       './plugins/withAndroidReleaseSigning',
+      './plugins/withEdgeToEdgeStatusBarCleanup',
     ],
     ios: {
       ...config.ios,
