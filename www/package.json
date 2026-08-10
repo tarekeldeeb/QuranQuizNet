@@ -1,6 +1,6 @@
 {
   "name": "quranquiznet",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start --dev-client",

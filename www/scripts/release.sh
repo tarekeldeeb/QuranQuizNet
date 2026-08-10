@@ -49,6 +49,12 @@ set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")/.."  # -> www/
 
+# The version bump above intentionally leaves app.json/package.json dirty.
+# `expo prebuild` runs its own interactive `git status --porcelain` check
+# (independent of --non-interactive) and would otherwise block on a
+# "Continue with uncommited changes?" prompt every single run.
+export EXPO_NO_GIT_STATUS=1
+
 usage() {
   cat <<'EOF'
 Usage:
