@@ -16,7 +16,7 @@ import { useProfileStore, CORRECT_RATIO_RANGE, tierFromRatioRange } from '../../
 import KhatamStar from '../../src/components/KhatamStar';
 import PressScale from '../../src/components/PressScale';
 import { useTheme, localeNum, radii } from '../../src/theme/tokens';
-import { useDirection, rowDir, alignDir, mirror } from '../../src/theme/direction';
+import { useDirection, rowDir, alignDir, mirror, switchStyle } from '../../src/theme/direction';
 import { translatePartName } from '../../src/models/constants';
 
 type BulkAction = 'all' | 'good' | 'weak';
@@ -184,6 +184,7 @@ export default function MapScreen() {
                 disabled={index === 0}
                 trackColor={{ false: colors.line, true: colors.gold }}
                 thumbColor="#fff"
+                style={switchStyle(isRTL)}
               />
             </View>
           );

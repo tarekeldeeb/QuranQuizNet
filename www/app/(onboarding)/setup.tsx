@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useProfileStore } from '../../src/stores/profileStore';
 import { useTheme } from '../../src/theme/tokens';
-import { useDirection, alignDir } from '../../src/theme/direction';
+import { useDirection, alignDir, switchStyle } from '../../src/theme/direction';
 import { translatePartName } from '../../src/models/constants';
 
 export default function SetupScreen() {
@@ -85,6 +85,7 @@ export default function SetupScreen() {
               disabled={index === 0}
               trackColor={{ false: colors.line, true: colors.gold }}
               thumbColor="#fff"
+              style={switchStyle(isRTL)}
             />
             <Text style={[s.partName, { color: colors.ink, textAlign: alignDir(isRTL) }, index === 0 && { color: colors.goldDeep, fontWeight: '600' }]}>
               {translatePartName(item.name)}

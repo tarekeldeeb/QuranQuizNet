@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, radii } from '../theme/tokens';
+import { useDirection, rowDir, alignDir } from '../theme/direction';
 import { SUPPORTED_LANGUAGES, LANGUAGE_META, type Language } from '../i18n/languages';
 import PressScale from './PressScale';
 
@@ -18,6 +19,7 @@ const OPTIONS: { lang: Language; label: string }[] = SUPPORTED_LANGUAGES.map((la
 export default function LanguagePicker({ value, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const { colors } = useTheme();
+  const { isRTL } = useDirection();
 
   const selectedOption = OPTIONS.find((opt) => opt.lang === value) || OPTIONS[0];
 
@@ -34,6 +36,7 @@ export default function LanguagePicker({ value, onChange }: Props) {
           {
             backgroundColor: colors.card,
             borderColor: colors.line,
+            flexDirection: rowDir(isRTL),
           },
         ]}
         onPress={() => setOpen((prev) => !prev)}
@@ -42,7 +45,7 @@ export default function LanguagePicker({ value, onChange }: Props) {
         accessibilityLabel={selectedOption.label}
       >
         <Ionicons name="globe-outline" size={18} color={colors.inkSoft} />
-        <Text style={[s.triggerText, { color: colors.ink }]} numberOfLines={1}>{selectedOption.label}</Text>
+        <Text style={[s.triggerText, { color: colors.ink, textAlign: alignDir(isRTL) }]} numberOfLines={1}>{selectedOption.label}</Text>
         <Ionicons
           name={open ? 'chevron-up' : 'chevron-down'}
           size={16}
@@ -69,6 +72,7 @@ export default function LanguagePicker({ value, onChange }: Props) {
                   key={opt.lang}
                   style={({ pressed }) => [
                     s.option,
+                    { flexDirection: rowDir(isRTL) },
                     active && { backgroundColor: colors.goldPale },
                     pressed && { opacity: 0.8 },
                   ]}
@@ -80,7 +84,7 @@ export default function LanguagePicker({ value, onChange }: Props) {
                   <Text
                     style={[
                       s.optionText,
-                      { color: active ? colors.navy : colors.ink },
+                      { color: active ? colors.navy : colors.ink, textAlign: alignDir(isRTL) },
                       active && s.optionTextActive,
                     ]}
                     numberOfLines={1}

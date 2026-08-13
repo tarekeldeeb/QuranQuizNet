@@ -10,6 +10,14 @@ export function mirror<T>(isRTL: boolean, ltrValue: T, rtlValue: T): T {
   return isRTL ? rtlValue : ltrValue;
 }
 
+// <Switch>'s thumb slides using logical (inline-start/end) CSS properties,
+// which only flip for a real `direction: rtl` on the DOM. This app fakes RTL
+// per-component instead (rowDir/alignDir), so the native/web switch widget
+// never mirrors on its own — flip it by hand with a horizontal transform.
+export function switchStyle(isRTL: boolean) {
+  return isRTL ? { transform: [{ scaleX: -1 }] } : undefined;
+}
+
 export function useDirection() {
   const language = useProfileStore((s) => s.language);
   return { language, isRTL: isRTLLang(language) };

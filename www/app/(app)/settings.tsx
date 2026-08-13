@@ -13,7 +13,7 @@ import {
   signOut, deleteAccount, watchNotifPrefs, setNotifPref, pushCurrentProfile, type NotifCategory, type NotifPrefs,
 } from '../../src/services/firebase';
 import { useTheme, radii } from '../../src/theme/tokens';
-import { useDirection, rowDir, alignDir } from '../../src/theme/direction';
+import { useDirection, rowDir, alignDir, switchStyle } from '../../src/theme/direction';
 import PressScale from '../../src/components/PressScale';
 import ThemeToggle from '../../src/components/ThemeToggle';
 import LanguagePicker from '../../src/components/LanguagePicker';
@@ -270,6 +270,7 @@ export default function SettingsScreen() {
               disabled={!specialEditable}
               trackColor={{ false: colors.line, true: colors.gold }}
               thumbColor="#fff"
+              style={switchStyle(isRTL)}
             />
           </View>
         </View>
@@ -289,6 +290,7 @@ export default function SettingsScreen() {
               onValueChange={(v) => handleToggleNotifPref('invites', v)}
               trackColor={{ false: colors.line, true: colors.gold }}
               thumbColor="#fff"
+              style={switchStyle(isRTL)}
             />
           </View>
           <View style={[s.toggleRow, { flexDirection: rowDir(isRTL), borderTopWidth: 1, borderTopColor: colors.line }]}>
@@ -301,6 +303,7 @@ export default function SettingsScreen() {
               onValueChange={(v) => handleToggleNotifPref('friendRequests', v)}
               trackColor={{ false: colors.line, true: colors.gold }}
               thumbColor="#fff"
+              style={switchStyle(isRTL)}
             />
           </View>
           <View style={[s.toggleRow, { flexDirection: rowDir(isRTL), borderTopWidth: 1, borderTopColor: colors.line }]}>
@@ -313,6 +316,7 @@ export default function SettingsScreen() {
               onValueChange={(v) => handleToggleNotifPref('streakAlerts', v)}
               trackColor={{ false: colors.line, true: colors.gold }}
               thumbColor="#fff"
+              style={switchStyle(isRTL)}
             />
           </View>
           <View style={[s.toggleRow, { flexDirection: rowDir(isRTL), borderTopWidth: 1, borderTopColor: colors.line }]}>
@@ -325,6 +329,7 @@ export default function SettingsScreen() {
               onValueChange={(v) => handleToggleNotifPref('dailyReady', v)}
               trackColor={{ false: colors.line, true: colors.gold }}
               thumbColor="#fff"
+              style={switchStyle(isRTL)}
             />
           </View>
           <View style={[s.toggleRow, { flexDirection: rowDir(isRTL), borderTopWidth: 1, borderTopColor: colors.line }]}>
@@ -337,6 +342,7 @@ export default function SettingsScreen() {
               onValueChange={(v) => handleToggleNotifPref('friendActivity', v)}
               trackColor={{ false: colors.line, true: colors.gold }}
               thumbColor="#fff"
+              style={switchStyle(isRTL)}
             />
           </View>
         </View>
