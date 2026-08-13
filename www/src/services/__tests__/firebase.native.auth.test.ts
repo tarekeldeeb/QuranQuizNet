@@ -20,6 +20,11 @@ jest.mock('firebase/database', () => ({
   ref: jest.fn(), set: jest.fn(), push: jest.fn(), get: jest.fn(),
 }));
 
+jest.mock('firebase/functions', () => ({
+  getFunctions: jest.fn(() => ({})),
+  httpsCallable: jest.fn(),
+}));
+
 jest.mock('firebase/auth', () => {
   const authState = { currentUser: null as null | { uid: string; isAnonymous: boolean } };
   class GoogleAuthProvider { setCustomParameters() { return this; } static credentialFromError = jest.fn(); }

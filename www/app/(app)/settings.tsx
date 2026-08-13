@@ -192,13 +192,8 @@ export default function SettingsScreen() {
     } catch (e) {
       setDeletingAccount(false);
       setDeleteSheetOpen(false);
-      const code = (e as { code?: string })?.code;
-      if (code === 'auth/requires-recent-login') {
-        notify(t('settings.reloginTitle'), t('settings.reloginBody'));
-      } else {
-        console.error(e);
-        notify(t('settings.errorTitle'), t('settings.errorBody'));
-      }
+      console.error(e);
+      notify(t('settings.errorTitle'), t('settings.errorBody'));
     }
   }
 

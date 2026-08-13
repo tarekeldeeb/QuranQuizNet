@@ -29,6 +29,11 @@ jest.mock('firebase/database', () => ({
   serverTimestamp: jest.fn(),
 }));
 
+jest.mock('firebase/functions', () => ({
+  getFunctions: jest.fn(() => ({})),
+  httpsCallable: jest.fn(),
+}));
+
 jest.mock('firebase/auth', () => ({
   getAuth: jest.fn(() => ({ currentUser: null })),
   initializeAuth: jest.fn(() => ({ currentUser: null })),

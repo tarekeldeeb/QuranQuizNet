@@ -28,6 +28,11 @@ jest.mock('firebase/database', () => ({
   serverTimestamp: jest.fn(),
 }));
 
+jest.mock('firebase/functions', () => ({
+  getFunctions: jest.fn(() => ({})),
+  httpsCallable: jest.fn(),
+}));
+
 jest.mock('firebase/auth', () => {
   const authState = { currentUser: null as null | { uid: string; isAnonymous: boolean } };
   return {

@@ -7,7 +7,7 @@ import {
   getAuth, initializeAuth, onAuthStateChanged, signInAnonymously,
   signInWithPopup, linkWithPopup, signInWithCredential, linkWithCredential,
   GoogleAuthProvider, FacebookAuthProvider, AuthProvider, AuthCredential, OAuthCredential,
-  signOut as fbSignOut, deleteUser, updateProfile, User, Auth,
+  signOut as fbSignOut, updateProfile, User, Auth,
 } from 'firebase/auth';
 // getReactNativePersistence is only exported from Firebase's React Native build;
 // the app's tsconfig resolves the web/node types, so the type isn't visible here.
@@ -19,6 +19,7 @@ import {
   getDatabase, ref, set, push, get as dbGet, update, remove,
   onValue, onDisconnect, runTransaction, serverTimestamp, Database,
 } from 'firebase/database';
+import { getFunctions, httpsCallable, Functions } from 'firebase/functions';
 import type { SocialKind } from './nativeOAuth';
 import type { PvpQueueEntry, PvpMatchMeta, PvpPlayerState, PvpMatchResult, MatchScopePart } from './pvpService';
 import { useProfileStore, tierFromRatioRange } from '../stores/profileStore';
@@ -77,6 +78,12 @@ export function getFirebaseAuth(): Auth {
 export function getFirebaseDb(): Database {
   if (!db) db = getDatabase(getFirebaseApp());
   return db;
+}
+
+let fns: Functions;
+export function getFirebaseFunctions(): Functions {
+  if (!fns) fns = getFunctions(getFirebaseApp());
+  return fns;
 }
 
 // ─── Auth helpers ─────────────────────────────────────────────────────────────
@@ -331,20 +338,26 @@ export async function signOut(): Promise<void> {
 }
 
 /**
- * Permanently deletes the signed-in user: their RTDB profile, then the
- * Firebase Auth account itself. RTDB removal must happen first — its rule is
- * `auth.uid === $user_id`, which stops being true the instant the Auth user
- * is gone. Firebase Auth requires a "recent" sign-in for account deletion
- * (throws auth/requires-recent-login on a stale session); the caller should
- * catch that specifically and ask the user to sign in again first. If that
- * happens here, the RTDB data is already gone but the Auth account survives
- * — an accepted asymmetry rather than building a full re-auth flow for it.
+ * Permanently deletes the signed-in user's RTDB profile and Auth account, via
+ * the `deleteaccount` callable (see functions/index.js). Deletion runs
+ * server-side with the Admin SDK specifically to avoid the client Auth SDK's
+ * own deleteUser(), which throws auth/requires-recent-login on any session
+ * older than a few minutes — a check anonymous/guest accounts can never
+ * satisfy (no credential to re-present) and that otherwise forces a
+ * sign-out/sign-in round trip even for social accounts. The callable only
+ * needs a valid ID token, not a recent one, so this works regardless of
+ * session age.
+ *
+ * The Auth SDK doesn't notice its own user was deleted server-side until its
+ * next token refresh, so sign out locally right after to reflect it
+ * immediately (matching what deleteUser() used to do synchronously).
  */
 export async function deleteAccount(): Promise<void> {
   const current = getFirebaseAuth().currentUser;
   if (!current) return;
-  await remove(ref(getFirebaseDb(), `/users/${current.uid}`));
-  await deleteUser(current);
+  const call = httpsCallable(getFirebaseFunctions(), 'deleteaccount');
+  await call();
+  await fbSignOut(getFirebaseAuth()).catch(() => {});
 }
 
 export function onAuthChange(callback: (user: User | null) => void): () => void {

@@ -1,11 +1,13 @@
 // Cloud Functions for Firebase SDK (2nd gen).
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onValueCreated } = require('firebase-functions/v2/database');
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const logger = require('firebase-functions/logger');
 const { sendPush, isCategoryEnabled, sendPushBulk } = require('./push.js');
 const { getNotificationText } = require('./i18n.js');
 const { streaksched } = require('./streak.js');
 const { mergeDayIntoMonthTotals, topOfMonth } = require('./monthTotals.js');
+const { deleteAccountForUid } = require('./account.js');
 exports.streaksched = streaksched;
 
 // The Firebase Admin SDK to access the Realtime Database.
@@ -56,6 +58,17 @@ exports.onfriendrequest = onValueCreated('/friendRequests/{uid}/{fromUid}', asyn
   } catch (err) {
     logger.error(`Error sending friend request push to user ${event.params?.uid}:`, err);
   }
+});
+
+// ── Account deletion ────────────────────────────────────────────────────────
+// See account.js for why this runs server-side instead of the client Auth
+// SDK's own deleteUser(). A callable only needs a valid (not necessarily
+// recent) ID token to invoke, which is what sidesteps the recency check.
+exports.deleteaccount = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Sign-in required.');
+  }
+  await deleteAccountForUid(admin, request.auth.uid);
 });
 
 const promisePool = require('es6-promise-pool');

@@ -122,9 +122,8 @@ describe('Settings — delete account', () => {
     expect(mockDeleteAccount).toHaveBeenCalled();
   });
 
-  it('shows a re-login message and does not navigate when the session is too old', async () => {
-    const err = Object.assign(new Error('stale session'), { code: 'auth/requires-recent-login' });
-    mockDeleteAccount.mockRejectedValue(err);
+  it('shows a generic error and does not navigate when deleteAccount fails', async () => {
+    mockDeleteAccount.mockRejectedValue(new Error('network blip'));
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
     const { findByText } = renderSettings();
@@ -136,10 +135,7 @@ describe('Settings — delete account', () => {
     await act(async () => { await Promise.resolve(); });
 
     expect(mockReplace).not.toHaveBeenCalledWith('/(auth)');
-    expect(alertSpy).toHaveBeenCalledWith(
-      'يلزم تسجيل الدخول مجدداً',
-      expect.stringContaining('سجّل الخروج'),
-    );
+    expect(alertSpy).toHaveBeenCalledWith('خطأ', expect.any(String));
 
     alertSpy.mockRestore();
   });
