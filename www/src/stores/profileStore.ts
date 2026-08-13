@@ -105,12 +105,22 @@ export function tierFromRatioRange(range: number): MasteryTier {
   }
 }
 
+// The start/length a study part at index i SHOULD have, derived live from
+// SURA_IDX/LAST5_JUZ_IDX. Single source of truth shared by makeDefaultParts()
+// and repairPartBounds() below, so the two can never drift apart from each
+// other — only from a saved profile whose parts predate a SURA_IDX fix.
+function partBoundsFor(i: number): { start: number; length: number } {
+  if (i === 0) return { start: 1, length: SURA_IDX[0] };
+  if (i < 45) return { start: SURA_IDX[i - 1], length: SURA_IDX[i] - SURA_IDX[i - 1] };
+  const j = i - 45; // 0..4 within the last-5-juz block
+  return { start: LAST5_JUZ_IDX[j], length: LAST5_JUZ_IDX[j + 1] - LAST5_JUZ_IDX[j] };
+}
+
 function makeDefaultParts(): StudyPart[] {
   const parts: StudyPart[] = [];
   // First part: Al-Fatiha (full first sura)
   parts.push({
-    start: 1,
-    length: SURA_IDX[0],
+    ...partBoundsFor(0),
     numCorrect: [0, 0, 0, 0, 0],
     numQuestions: [0, 0, 0, 0, 0],
     name: 'سورة ' + SURA_NAME[0],
@@ -119,8 +129,7 @@ function makeDefaultParts(): StudyPart[] {
   // Suras 1-44 (index 1..44)
   for (let i = 1; i < 45; i++) {
     parts.push({
-      start: SURA_IDX[i - 1],
-      length: SURA_IDX[i] - SURA_IDX[i - 1],
+      ...partBoundsFor(i),
       numCorrect: [0, 0, 0, 0, 0],
       numQuestions: [0, 0, 0, 0, 0],
       name: 'سورة ' + SURA_NAME[i],
@@ -130,8 +139,7 @@ function makeDefaultParts(): StudyPart[] {
   // Last 5 juz
   for (let i = 0; i < 5; i++) {
     parts.push({
-      start: LAST5_JUZ_IDX[i],
-      length: LAST5_JUZ_IDX[i + 1] - LAST5_JUZ_IDX[i],
+      ...partBoundsFor(45 + i),
       numCorrect: [0, 0, 0, 0, 0],
       numQuestions: [0, 0, 0, 0, 0],
       name: 'جزء ' + LAST5_JUZ_NAME[i],
@@ -140,6 +148,27 @@ function makeDefaultParts(): StudyPart[] {
   }
   parts[49].checked = true; // Juz 'Amma (last juz)
   return parts;
+}
+
+// A saved profile's part boundaries are baked in at creation time from
+// SURA_IDX/LAST5_JUZ_IDX (see makeDefaultParts above). When those constants
+// are later corrected — as happened in 06e720e, a ~1-24 word/sura tokenization
+// fix — an existing profile's persisted start/length silently drifts out of
+// sync and never heals on its own (load() reads it back verbatim). Re-derive
+// and patch in place on every load instead of trusting a one-shot version
+// flag, so this self-heals for this fix and any future SURA_IDX correction
+// alike. numCorrect/numQuestions/checked/name are untouched — only the word
+// range moves.
+function repairPartBounds(parts: StudyPart[]): { parts: StudyPart[]; changed: boolean } {
+  if (parts.length !== 50) return { parts, changed: false }; // unexpected shape; leave alone
+  let changed = false;
+  const repaired = parts.map((p, i) => {
+    const { start, length } = partBoundsFor(i);
+    if (p.start === start && p.length === length) return p;
+    changed = true;
+    return { ...p, start, length };
+  });
+  return { parts: changed ? repaired : parts, changed };
 }
 
 // Copy a counts array and ensure it has 5 slots (older profiles stored 4), so
@@ -396,8 +425,9 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
         loadKey<number>(KEYS.tipIndex, 0),
         loadKey<string>(KEYS.lastTipRollDate, ''),
       ]);
+    const { parts: fixedParts, changed: partsRepaired } = repairPartBounds(parts);
     set({
-      uid, lastUpdate, lastSync, lastSeed, level, specialEnabled, scores, parts, version, social,
+      uid, lastUpdate, lastSync, lastSeed, level, specialEnabled, scores, parts: fixedParts, version, social,
       streak, bestStreak: Math.max(bestStreak, streak), lastPlayDate, lastDailyCompletedDate,
       // Merge over EMPTY_PVP: an older saved profile's pvp record predates the
       // points/winStreak/streakFreezeTokens fields, so a raw load would leave
@@ -405,6 +435,11 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
       pvp: { ...EMPTY_PVP, ...pvp },
       lastDailyScore, pendingDailySubmit, tipIndex, lastTipRollDate, loaded: true, themeMode, language,
     });
+    // Persist the repair so it doesn't have to be recomputed (and re-diffed
+    // against `parts`) on every future load, and so the fix reaches Firebase
+    // on the next push instead of a stale copy overwriting it back down on
+    // another device via syncTo().
+    if (partsRepaired) await saveKey(KEYS.parts, fixedParts);
     return true;
   },
 

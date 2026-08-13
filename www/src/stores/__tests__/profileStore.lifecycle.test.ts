@@ -4,8 +4,10 @@
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useProfileStore, StudyPart, CORRECT_RATIO_RANGE } from '../profileStore';
 import { TIPS } from '../../models/tips';
+import { SURA_IDX, LAST5_JUZ_IDX } from '../../models/constants';
 
 const store = () => useProfileStore.getState();
 const today = () => new Date().toISOString().split('T')[0];
@@ -123,6 +125,57 @@ describe('syncTo: restore a remote profile on login', () => {
     });
     await store().syncTo({ uid: 'u1', lastUpdate: 1_000_000, streak: 3 });
     expect(store().bestStreak).toBe(5);
+  });
+});
+
+describe('sura-boundary repair on load (06e720e SURA_IDX correction)', () => {
+  // A pre-fix profile's parts carry the OLD (buggy) SURA_IDX-derived start/length
+  // baked in at creation time. load() must re-derive them from the current
+  // constants in place, without touching anything else.
+  function staleParts(): StudyPart[] {
+    return Array.from({ length: 50 }, (_, i) => ({
+      start: 999_000 + i, // deliberately not anything SURA_IDX/LAST5_JUZ_IDX would produce
+      length: 5,
+      numCorrect: [1, 2, 3, 4, 5],
+      numQuestions: [5, 5, 5, 5, 5],
+      name: `part-${i}`,
+      checked: i % 2 === 0,
+    }));
+  }
+
+  it('rewrites stale start/length to match current SURA_IDX, leaving scores/checked/name untouched', async () => {
+    await AsyncStorage.setItem('prf_uid', JSON.stringify('u1'));
+    await AsyncStorage.setItem('prf_parts', JSON.stringify(staleParts()));
+
+    await store().load();
+
+    const parts = store().parts;
+    expect(parts).toHaveLength(50);
+    expect(parts[0]).toMatchObject({ start: 1, length: SURA_IDX[0] });
+    expect(parts[1]).toMatchObject({ start: SURA_IDX[0], length: SURA_IDX[1] - SURA_IDX[0] });
+    expect(parts[45]).toMatchObject({ start: LAST5_JUZ_IDX[0], length: LAST5_JUZ_IDX[1] - LAST5_JUZ_IDX[0] });
+    parts.forEach((p, i) => {
+      expect(p.numCorrect).toEqual([1, 2, 3, 4, 5]);
+      expect(p.numQuestions).toEqual([5, 5, 5, 5, 5]);
+      expect(p.name).toBe(`part-${i}`);
+      expect(p.checked).toBe(i % 2 === 0);
+    });
+
+    // The fix is written back, not just held in memory — so it also reaches
+    // Firebase on the next push instead of a stale copy re-drifting it later.
+    const persisted = JSON.parse((await AsyncStorage.getItem('prf_parts'))!) as StudyPart[];
+    expect(persisted[0].start).toBe(1);
+    expect(persisted[0].length).toBe(SURA_IDX[0]);
+  });
+
+  it('is idempotent: re-loading an already-correct profile leaves parts unchanged', async () => {
+    useProfileStore.setState({ uid: 'u2' });
+    await store().reset(); // makeDefaultParts() + saveAll() — already on current bounds
+    const before = store().parts;
+
+    await store().load();
+
+    expect(store().parts).toEqual(before);
   });
 });
 
