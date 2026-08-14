@@ -218,6 +218,11 @@
       "needsReview": "{{part}} نیاز به مرور دارد",
       "home": "خانه",
       "continue": "ادامه"
+    },
+    "mistakes": {
+      "title": "اشتباهات برای مرور ({{count}})",
+      "correct": "صحیح: {{text}}",
+      "picked": "پاسخ شما: {{text}}"
     }
   },
   "pvp": {

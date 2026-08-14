@@ -215,6 +215,11 @@
       "needsReview": "{{part}} perlu diulas",
       "home": "Beranda",
       "continue": "Lanjut"
+    },
+    "mistakes": {
+      "title": "Kesalahan untuk ditinjau ({{count}})",
+      "correct": "Benar: {{text}}",
+      "picked": "Jawaban Anda: {{text}}"
     }
   },
   "pvp": {

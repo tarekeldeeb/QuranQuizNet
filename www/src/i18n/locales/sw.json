@@ -218,6 +218,11 @@
       "needsReview": "{{part}} inahitaji kurudiwa",
       "home": "Nyumbani",
       "continue": "Endelea"
+    },
+    "mistakes": {
+      "title": "Makosa ya kurudia ({{count}})",
+      "correct": "Sahihi: {{text}}",
+      "picked": "Ulijibu: {{text}}"
     }
   },
   "pvp": {

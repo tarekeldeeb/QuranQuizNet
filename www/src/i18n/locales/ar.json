@@ -227,6 +227,11 @@
       "needsReview": "{{part}} تحتاج مراجعة",
       "home": "الرئيسية",
       "continue": "واصل"
+    },
+    "mistakes": {
+      "title": "أخطاء للمراجعة ({{count}})",
+      "correct": "الصواب: {{text}}",
+      "picked": "إجابتك: {{text}}"
     }
   },
   "pvp": {

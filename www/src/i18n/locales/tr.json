@@ -218,6 +218,11 @@
       "needsReview": "{{part}} gözden geçirilmeli",
       "home": "Ana Sayfa",
       "continue": "Devam Et"
+    },
+    "mistakes": {
+      "title": "Gözden geçirilecek hatalar ({{count}})",
+      "correct": "Doğru: {{text}}",
+      "picked": "Cevabınız: {{text}}"
     }
   },
   "pvp": {

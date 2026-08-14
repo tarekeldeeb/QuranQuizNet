@@ -215,6 +215,11 @@
       "needsReview": "{{part}} perlu dibaleni",
       "home": "Utama",
       "continue": "Terusake"
+    },
+    "mistakes": {
+      "title": "Kaluputan kanggo dideleng maneh ({{count}})",
+      "correct": "Bener: {{text}}",
+      "picked": "Wangsulan sampeyan: {{text}}"
     }
   },
   "pvp": {

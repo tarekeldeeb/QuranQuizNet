@@ -218,6 +218,11 @@
       "needsReview": "{{part}} na buƙatar sake dubawa",
       "home": "Gida",
       "continue": "Ci gaba"
+    },
+    "mistakes": {
+      "title": "Kura-kuran da za a duba ({{count}})",
+      "correct": "Daidai: {{text}}",
+      "picked": "Amsarka: {{text}}"
     }
   },
   "pvp": {

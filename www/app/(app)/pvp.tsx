@@ -13,16 +13,18 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useTranslation } from 'react-i18next';
 import { useDirection, rowDir, alignDir, mirror } from '../../src/theme/direction';
-import QuizCard, { CardData } from '../../src/components/QuizCard';
+import QuizCard, { CardData, reachesNewSuraContent } from '../../src/components/QuizCard';
+import MistakesReview from '../../src/components/MistakesReview';
 import PressScale from '../../src/components/PressScale';
 import { useProfileStore } from '../../src/stores/profileStore';
 import { getPvpTierInfo, cityName as pvpCityName } from '../../src/models/pvpTiers';
 import * as QS from '../../src/services/questionnaireService';
 import * as FB from '../../src/services/firebase';
 import { trackEvent } from '../../src/services/analytics';
-import { randperm, shuffleByPerm, deepCopy } from '../../src/models/constants';
+import { randperm, shuffleByPerm, deepCopy, getSuraIdx } from '../../src/models/constants';
 import { ayaNumberOf, wordOffsetInAya } from '../../src/db/idb';
 import { QuestionObject } from '../../src/models/questionnaire';
+import { MistakeRecord, buildMistakeRecord } from '../../src/models/mistakes';
 import {
   PVP_QUESTIONS, PVP_ROUNDS, PVP_TIMER_FIRST, PVP_TIMER_NEXT, PVP_ADVANCE_MS,
   BOT_EMOJI, MatchPlan, BotTimeline, BotProgress, PvpOutcome,
@@ -116,6 +118,7 @@ export default function PvpScreen() {
   const [playerResults, setPlayerResults] = useState<(boolean | null)[]>(EMPTY_BOT_VIEW.results);
   const [botView, setBotView] = useState<BotProgress>(EMPTY_BOT_VIEW);
   const [outcome, setOutcome] = useState<PvpOutcome | null>(null);
+  const [matchMistakes, setMatchMistakes] = useState<MistakeRecord[]>([]);
   const [reportVisible, setReportVisible] = useState(false);
   const [reportCard, setReportCard] = useState<CardData | null>(null);
   const [reportMsg, setReportMsg] = useState('');
@@ -128,6 +131,7 @@ export default function PvpScreen() {
   const botRef = useRef<BotTimeline | null>(null);
   const qIndexRef = useRef(0);
   const playerCorrectRef = useRef(0);
+  const matchMistakesRef = useRef<MistakeRecord[]>([]);
   const playerFinishMsRef = useRef(0);
   const playerResultsRef = useRef<(boolean | null)[]>(EMPTY_BOT_VIEW.results);
   const matchStartRef = useRef(0);
@@ -262,6 +266,8 @@ export default function PvpScreen() {
 
     qIndexRef.current = 0;
     playerCorrectRef.current = 0;
+    matchMistakesRef.current = [];
+    setMatchMistakes([]);
     playerFinishMsRef.current = 0;
     settledRef.current = false;
     playerResultsRef.current = new Array(PVP_QUESTIONS).fill(null);
@@ -482,6 +488,8 @@ export default function PvpScreen() {
     }
     qIndexRef.current = 0;
     playerCorrectRef.current = 0;
+    matchMistakesRef.current = [];
+    setMatchMistakes([]);
     playerFinishMsRef.current = 0;
     settledRef.current = false;
     playerResultsRef.current = new Array(PVP_QUESTIONS).fill(null);
@@ -608,6 +616,7 @@ export default function PvpScreen() {
       opponent: 'human',
     });
     setPhase('done');
+    setMatchMistakes(matchMistakesRef.current);
     setTimeout(() => setOutcome(outcomeVal), 700);
   }
 
@@ -695,7 +704,7 @@ export default function PvpScreen() {
     const isLastRound = active.round + 1 === PVP_ROUNDS;
 
     if (isWrong) {
-      settleQuestion(false);
+      settleQuestion(false, optionIndex);
     } else if (isLastRound) {
       settleQuestion(true);
     } else {
@@ -719,7 +728,7 @@ export default function PvpScreen() {
     }
   }
 
-  function settleQuestion(correct: boolean) {
+  function settleQuestion(correct: boolean, pickedIndex?: number) {
     if (settledRef.current) return;
     settledRef.current = true;
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
@@ -733,6 +742,27 @@ export default function PvpScreen() {
     setPlayerResults(nextResults);
     setCard((prev) => prev ? { ...prev, wasCorrect: correct } : prev);
     setActive((a) => a ? { ...a, flipTrigger: a.flipTrigger + 1, isCorrect: correct } : null);
+
+    if (!correct && card && active) {
+      const round = active.round;
+      const errorEnd = card.wordOffset + card.qo.qLen + (round + 1) * card.qo.oLen - 1;
+      const hideTitle = !reachesNewSuraContent(card.qo.startIdx, card.qo.startIdx + (errorEnd - card.wordOffset));
+      const suraNum = getSuraIdx(card.qo.startIdx) + 1;
+      const correctText = QS.qo.txt.op[round]?.[0] ?? '';
+      const pickedText = pickedIndex != null ? (active.shuffledOptions[pickedIndex] ?? '') : '';
+      const mistake = buildMistakeRecord({
+        id: `${card.index}-${round}`,
+        qo: card.qo,
+        round,
+        wordOffset: card.wordOffset,
+        aya: card.answerAya,
+        suraNum,
+        hideTitle,
+        pickedText,
+        correctText,
+      });
+      matchMistakesRef.current.push(mistake);
+    }
 
     const isLast = q + 1 >= PVP_QUESTIONS;
     if (isLast) {
@@ -795,6 +825,7 @@ export default function PvpScreen() {
       opponent: 'bot',
     });
     setPhase('done');
+    setMatchMistakes(matchMistakesRef.current);
     // Let the bot's strip visually complete before the verdict lands.
     setTimeout(() => setOutcome(result), 700);
   }
@@ -995,6 +1026,7 @@ export default function PvpScreen() {
               </View>
             </View>
             <Text style={[s.resultSub, { color: colors.inkSoft }]}>{outcomeSub}</Text>
+            <MistakesReview mistakes={matchMistakes} />
             {outcome !== null && (() => {
               const tierInfo = getPvpTierInfo(profile.pvp.points);
               const pointsGained = outcome === 'win' ? profile.pvp.points - pointsBeforeRef.current : 0;

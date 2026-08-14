@@ -218,6 +218,11 @@
       "needsReview": "{{part}} পুনরালোচনা প্রয়োজন",
       "home": "হোম",
       "continue": "চালিয়ে যান"
+    },
+    "mistakes": {
+      "title": "পর্যালোচনার জন্য ভুল ({{count}})",
+      "correct": "সঠিক: {{text}}",
+      "picked": "আপনার উত্তর: {{text}}"
     }
   },
   "pvp": {

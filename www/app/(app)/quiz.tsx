@@ -9,7 +9,8 @@ import { useLocalSearchParams, useFocusEffect, useRouter, useNavigation } from '
 import { Ionicons } from '@expo/vector-icons';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import QuizCard, { CardData } from '../../src/components/QuizCard';
+import QuizCard, { CardData, reachesNewSuraContent } from '../../src/components/QuizCard';
+import MistakesReview from '../../src/components/MistakesReview';
 import QuizSettingsBar, { ScopeMode } from '../../src/components/QuizSettingsBar';
 import { useTranslation } from 'react-i18next';
 import { useDirection, rowDir, alignDir, mirror } from '../../src/theme/direction';
@@ -25,10 +26,11 @@ import { requestPermission, scheduleStreakReminder, registerPushToken } from '..
 import {
   randperm, shuffleByPerm, deepCopy, countedScore,
   DAILYQUIZ_CHECKEVERY, DAILYQUIZ_CHECKAFTER, DAILYQUIZ_QPERPART_COUNT,
-  DEFAULT_GUEST_NAME, translatePartName,
+  DEFAULT_GUEST_NAME, translatePartName, getSuraIdx,
 } from '../../src/models/constants';
 import { ayaNumberOf, wordOffsetInAya } from '../../src/db/idb';
 import { QuestionObject } from '../../src/models/questionnaire';
+import { MistakeRecord, buildMistakeRecord } from '../../src/models/mistakes';
 import {
   decideFocusFromContext, isAnswerable, shouldSuspendNormalRun,
   shouldShowSummary, shouldRestoreNormalRunAfterDaily, decideSessionComplete,
@@ -100,6 +102,7 @@ interface SessionCache {
   cardCounter: number;
   sessionCorrect: number;
   sessionAnswered: number;   // questions answered this run (correct + incorrect)
+  mistakes: MistakeRecord[];
   combo: number;             // consecutive correct answers this run (resets on a miss)
   dailyScore: number;
   dailyTime: number;
@@ -119,6 +122,7 @@ interface NormalSnapshot {
   cardCounter: number;
   sessionCorrect: number;
   sessionAnswered: number;
+  mistakes: MistakeRecord[];
   customPart: number | null;
   weakReviewParts: number[] | null;
   qo: QuestionObject;   // the live question when the normal run was suspended
@@ -131,7 +135,7 @@ interface NormalSnapshot {
 const sessionCache: SessionCache = {
   active: false, dailyMode: false, dailyEnded: false,
   cards: [], activeCard: null, score: 0,
-  cardCounter: 0, sessionCorrect: 0, sessionAnswered: 0, combo: 0, dailyScore: 0, dailyTime: 0,
+  cardCounter: 0, sessionCorrect: 0, sessionAnswered: 0, mistakes: [], combo: 0, dailyScore: 0, dailyTime: 0,
   lastNonce: undefined, lastStart: undefined, customPart: null, weakReviewParts: null, normalSnapshot: null,
 };
 
@@ -159,6 +163,7 @@ export default function QuizScreen() {
   const [reportMsg, setReportMsg] = useState('');
   const [dailyEndVisible, setDailyEndVisible] = useState(false);
   const [dailyFinalScore, setDailyFinalScore] = useState(0);
+  const [dailyMistakes, setDailyMistakes] = useState<MistakeRecord[]>([]);
   // Post-win engagement: a live rank-comparison line against today's actual
   // participants (the same cohort the league screen's اليوم tab shows), fetched
   // once the daily quiz ends (null while loading/unavailable).
@@ -177,6 +182,7 @@ export default function QuizScreen() {
   );
   // Post-session summary
   const [summaryVisible, setSummaryVisible] = useState(false);
+  const [summaryMistakes, setSummaryMistakes] = useState<MistakeRecord[]>([]);
   // Mirror of customPartRef as state, so the read-only settings strip re-renders
   // when the active scope changes (refs alone don't trigger a render).
   const [customPartIndex, setCustomPartIndex] = useState<number | null>(() => sessionCache.customPart);
@@ -187,6 +193,7 @@ export default function QuizScreen() {
   const cardCounterRef = useRef(sessionCache.cardCounter);
   const sessionCorrectRef = useRef(sessionCache.sessionCorrect);
   const sessionAnsweredRef = useRef(sessionCache.sessionAnswered);
+  const sessionMistakesRef = useRef<MistakeRecord[]>(sessionCache.mistakes);
   const dailyScoreRef = useRef(sessionCache.dailyScore);
   const dailyTimeRef = useRef(sessionCache.dailyTime);
   const dailyTimeInterval = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -345,6 +352,7 @@ export default function QuizScreen() {
           cardCounter: cardCounterRef.current,
           sessionCorrect: sessionCorrectRef.current,
           sessionAnswered: sessionAnsweredRef.current,
+          mistakes: sessionMistakesRef.current,
           customPart: customPartRef.current,
           weakReviewParts: weakReviewPartsRef.current,
           qo: deepCopy(QS.qo),
@@ -392,6 +400,7 @@ export default function QuizScreen() {
     cardCounterRef.current = 0;
     sessionCorrectRef.current = 0;
     sessionAnsweredRef.current = 0;
+    sessionMistakesRef.current = [];
     flushedAnsweredRef.current = 0;
     flushedCorrectRef.current = 0;
     setCombo(0);
@@ -496,6 +505,7 @@ export default function QuizScreen() {
     cardCounterRef.current = snap.cardCounter;
     sessionCorrectRef.current = snap.sessionCorrect;
     sessionAnsweredRef.current = snap.sessionAnswered;
+    sessionMistakesRef.current = snap.mistakes ?? [];
     flushedAnsweredRef.current = snap.flushedAnswered;
     flushedCorrectRef.current = snap.flushedCorrect;
     dailyScoreRef.current = 0;
@@ -524,6 +534,7 @@ export default function QuizScreen() {
     sessionCache.cardCounter = cardCounterRef.current;
     sessionCache.sessionCorrect = sessionCorrectRef.current;
     sessionCache.sessionAnswered = sessionAnsweredRef.current;
+    sessionCache.mistakes = sessionMistakesRef.current;
     sessionCache.dailyScore = dailyScoreRef.current;
     sessionCache.dailyTime = dailyTimeRef.current;
     sessionCache.customPart = customPartRef.current;
@@ -807,6 +818,9 @@ export default function QuizScreen() {
     if (shouldShowSummary(sessionAnsweredRef.current, dailyMode)) {
       profile.updateScoreRecord();
       maybeRequestNotificationPermission();
+      setSummaryMistakes(sessionMistakesRef.current);
+      sessionMistakesRef.current = [];
+      syncCacheFlags();
       summaryPendingRef.current = true;
       setTimeout(() => { summaryPendingRef.current = false; setSummaryVisible(true); }, 650);
     } else {
@@ -885,6 +899,30 @@ export default function QuizScreen() {
       return next;
     });
     setActive((a) => a ? { ...a, flipTrigger: a.flipTrigger + 1, isCorrect: false, pickedIndex: pickedIndex ?? null } : null);
+
+    const card = cards[cards.length - 1];
+    if (card && active) {
+      const round = active.round;
+      const errorEnd = card.wordOffset + card.qo.qLen + (round + 1) * card.qo.oLen - 1;
+      const hideTitle = !reachesNewSuraContent(card.qo.startIdx, card.qo.startIdx + (errorEnd - card.wordOffset));
+      const suraNum = getSuraIdx(card.qo.startIdx) + 1;
+      const correctText = QS.qo.txt.op[round]?.[0] ?? '';
+      const pickedText = pickedIndex != null ? (active.shuffledOptions[pickedIndex] ?? '') : '';
+      const mistake = buildMistakeRecord({
+        id: `${card.index}-${round}`,
+        qo: card.qo,
+        round,
+        wordOffset: card.wordOffset,
+        aya: card.answerAya,
+        suraNum,
+        hideTitle,
+        pickedText,
+        correctText,
+      });
+      sessionMistakesRef.current.push(mistake);
+      syncCacheFlags();
+    }
+
     afterAnswer();
   }
 
@@ -940,7 +978,6 @@ export default function QuizScreen() {
     dailyModeRef.current = false;
     sessionActiveRef.current = false;
     dailyEndedRef.current = true;
-    syncCacheFlags();
     const finalScore = profile.getDailyQuizScore(
       dailyScoreRef.current,
       dailyTimeRef.current / 1000,
@@ -948,6 +985,9 @@ export default function QuizScreen() {
     profile.updateScoreRecord();
     setDailyFinalScore(finalScore);
     setDailyRankLine(null);
+    setDailyMistakes(sessionMistakesRef.current);
+    sessionMistakesRef.current = [];
+    syncCacheFlags();
     // Show the result screen immediately — don't make the user wait on the
     // network for a score they've already earned locally.
     setDailyEndVisible(true);
@@ -1257,6 +1297,7 @@ export default function QuizScreen() {
                 </PressScale>
               )}
             </View>
+            <MistakesReview mistakes={dailyMistakes} />
             <PressScale style={[s.btnConfirm, { backgroundColor: colors.navy }]} onPress={() => {
               setDailyEndVisible(false);
               if (shouldRestoreNormalRunAfterDaily(!!sessionCache.normalSnapshot)) restoreNormalSession();
@@ -1292,6 +1333,7 @@ export default function QuizScreen() {
                 {t('quiz.summary.needsReview', { part: translatePartName(weakestPart) })}
               </Text>
             )}
+            <MistakesReview mistakes={summaryMistakes} />
             <View style={s.modalRow}>
               <PressScale style={[s.btnCancel, { backgroundColor: colors.goldPale }]} onPress={() => { emitSessionComplete(); setSummaryVisible(false); router.replace('/(app)/me'); }}>
                 <Text style={[s.btnCancelText, { color: colors.inkSoft }]}>{t('quiz.summary.home')}</Text>

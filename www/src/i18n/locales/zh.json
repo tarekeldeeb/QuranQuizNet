@@ -215,6 +215,11 @@
       "needsReview": "{{part}} 需要复习",
       "home": "首页",
       "continue": "继续"
+    },
+    "mistakes": {
+      "title": "待复习的错题 ({{count}})",
+      "correct": "正确: {{text}}",
+      "picked": "你的答案: {{text}}"
     }
   },
   "pvp": {

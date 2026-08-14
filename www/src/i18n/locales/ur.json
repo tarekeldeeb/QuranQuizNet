@@ -218,6 +218,11 @@
       "needsReview": "{{part}} کو جائزے کی ضرورت ہے",
       "home": "ہوم",
       "continue": "جاری رکھیں"
+    },
+    "mistakes": {
+      "title": "جائزے کے لیے غلطیاں ({{count}})",
+      "correct": "درست: {{text}}",
+      "picked": "آپ کا جواب: {{text}}"
     }
   },
   "pvp": {

@@ -227,6 +227,11 @@
       "needsReview": "{{part}} needs review",
       "home": "Home",
       "continue": "Continue"
+    },
+    "mistakes": {
+      "title": "Mistakes to review ({{count}})",
+      "correct": "Correct: {{text}}",
+      "picked": "You answered: {{text}}"
     }
   },
   "pvp": {

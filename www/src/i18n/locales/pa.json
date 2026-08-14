@@ -218,6 +218,11 @@
       "needsReview": "{{part}} نوں مُڑ ویکھن دی لوڑ اے",
       "home": "ہوم",
       "continue": "اگے ودھو"
+    },
+    "mistakes": {
+      "title": "دوبارہ ویکھن لئی غلطیاں ({{count}})",
+      "correct": "صحیح: {{text}}",
+      "picked": "تہاڈا جواب: {{text}}"
     }
   },
   "pvp": {

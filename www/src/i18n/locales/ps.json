@@ -218,6 +218,11 @@
       "needsReview": "{{part}} ته بیاکتنه اړینه ده",
       "home": "کور",
       "continue": "ادامه"
+    },
+    "mistakes": {
+      "title": "د بیا کتنې لپاره تېروتنې ({{count}})",
+      "correct": "سم: {{text}}",
+      "picked": "ستاسو ځواب: {{text}}"
     }
   },
   "pvp": {

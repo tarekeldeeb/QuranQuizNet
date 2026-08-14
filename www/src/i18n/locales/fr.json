@@ -221,6 +221,11 @@
       "needsReview": "{{part}} à réviser",
       "home": "Accueil",
       "continue": "Continuer"
+    },
+    "mistakes": {
+      "title": "Erreurs à revoir ({{count}})",
+      "correct": "Correct : {{text}}",
+      "picked": "Votre réponse : {{text}}"
     }
   },
   "pvp": {

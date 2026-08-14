@@ -215,6 +215,11 @@
       "needsReview": "{{part}} perlu diulang kaji",
       "home": "Utama",
       "continue": "Teruskan"
+    },
+    "mistakes": {
+      "title": "Kesilapan untuk disemak ({{count}})",
+      "correct": "Betul: {{text}}",
+      "picked": "Jawapan anda: {{text}}"
     }
   },
   "pvp": {
