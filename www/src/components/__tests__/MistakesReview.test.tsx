@@ -35,7 +35,7 @@ describe('MistakesReview', () => {
       },
     ];
 
-    const { getByText, getAllByText } = render(<MistakesReview mistakes={mistakes} />);
+    const { getByText, getAllByText, queryByText } = render(<MistakesReview mistakes={mistakes} />);
 
     // Header title
     expect(getByText(/أخطاء للمراجعة/)).toBeTruthy();
@@ -44,9 +44,11 @@ describe('MistakesReview', () => {
     expect(getByText(/الفاتحة/)).toBeTruthy();
     expect(getAllByText(/البقرة/).length).toBe(2); // In sura caption and in correctText
 
-    // Check Quran mistake texts
-    expect(getByText(/الرحمن الرحيم/)).toBeTruthy();
+    // Quran mistake: only the picked-answer caption renders — the correct
+    // continuation is already shown via the error-highlighted QuranText, so a
+    // redundant "correct" caption is intentionally suppressed for these rows.
     expect(getByText(/العالمين/)).toBeTruthy();
+    expect(queryByText(/الرحمن الرحيم/)).toBeNull();
 
     // Check special question mistake texts
     expect(getByText(/آل عمران/)).toBeTruthy();

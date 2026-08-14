@@ -61,7 +61,11 @@ export default function MistakesReview({ mistakes }: Props) {
                 </View>
               )}
 
-              {!!m.correctText && (
+              {/* The correct continuation is already visible via the error-highlighted
+                  QuranText above — a redundant caption would just repeat it. Only
+                  special (non-Quran) question types have no such visual, so they
+                  still need the correct answer spelled out here. */}
+              {!m.isQuranText && !!m.correctText && (
                 <Text style={[s.captionText, { color: colors.correct, textAlign: alignDir(isRTL) }]}>
                   {t('quiz.mistakes.correct', { text: m.correctText })}
                 </Text>
@@ -111,10 +115,13 @@ const s = StyleSheet.create({
   quranBox: {
     paddingVertical: 4,
   },
+  // Font size/line height match QuizCard.tsx's answerText exactly — that gap is
+  // tuned so the Quran diacritics aren't clipped top/bottom; a smaller value here
+  // cropped ascenders/descenders on multi-line renders.
   quranText: {
-    fontSize: 20,
+    fontSize: 22,
     fontFamily: QURAN_FONT,
-    lineHeight: 40,
+    lineHeight: 46,
     textAlign: 'right',
     writingDirection: 'rtl',
     alignItems: 'center',
