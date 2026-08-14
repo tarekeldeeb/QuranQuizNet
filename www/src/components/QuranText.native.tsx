@@ -34,6 +34,7 @@ function buildHtml(
   fontSize: number,
   ink: string,
   paper: string,
+  error?: string,
 ): string {
   return `<!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -139,7 +140,7 @@ quran-madina-html-line:has(.quran-madina-html-sura-start)::before {
 })();
 </script>
 </head><body>
-<quran-madina-html sura="${sura}" aya="${aya}" words="${words}" headless quotes="no" inline="no"${hideTitle ? ' notitle' : ''}></quran-madina-html>
+<quran-madina-html sura="${sura}" aya="${aya}" words="${words}" headless quotes="no" inline="no"${hideTitle ? ' notitle' : ''}${error ? ` error="${error}"` : ''}></quran-madina-html>
 <script>
 (function () {
   function post(h) { if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(String(h)); }
@@ -159,7 +160,7 @@ quran-madina-html-line:has(.quran-madina-html-sura-start)::before {
 
 let instanceCounter = 0;
 
-export default function QuranText({ sura, aya, words, hideTitle, style }: QuranTextProps) {
+export default function QuranText({ sura, aya, words, hideTitle, error, style }: QuranTextProps) {
   const { colors } = useTheme();
   const [height, setHeight] = useState(MIN_HEIGHT);
   // The `style` prop QuizCard passes in (questionText/answerText) sets
@@ -207,7 +208,7 @@ export default function QuranText({ sura, aya, words, hideTitle, style }: QuranT
     // file:// loading path here.
     let cancelled = false;
     const fontSize = madinaFontSizeForWidth(width);
-    const html = buildHtml(sura, aya, words, hideTitle, fontSize, colors.ink, colors.paper);
+    const html = buildHtml(sura, aya, words, hideTitle, fontSize, colors.ink, colors.paper, error);
     const uri = `${getMadinaBaseUri()}_render_${instanceId}.html`;
     FileSystem.writeAsStringAsync(uri, html).then(() => {
       if (cancelled) return;
@@ -217,7 +218,7 @@ export default function QuranText({ sura, aya, words, hideTitle, style }: QuranT
     return () => {
       cancelled = true;
     };
-  }, [sura, aya, words, hideTitle, instanceId, width, colors.ink, colors.paper]);
+  }, [sura, aya, words, hideTitle, error, instanceId, width, colors.ink, colors.paper]);
 
   function onMessage(e: WebViewMessageEvent) {
     const h = Number(e.nativeEvent.data);

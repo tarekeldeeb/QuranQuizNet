@@ -153,15 +153,16 @@ function injectSuraBorderFix() {
 }
 injectSuraBorderFix();
 
-export default function QuranText({ sura, aya, words, hideTitle, style }: QuranTextProps) {
+export default function QuranText({ sura, aya, words, hideTitle, error, style }: QuranTextProps) {
   const { colors } = useTheme();
   return (
     <View style={[wrap, style as StyleProp<ViewStyle>]}>
       <QuranMadinaHtml
-        key={`${sura}:${aya}:${words}:${hideTitle}`}
+        key={`${sura}:${aya}:${words}:${hideTitle}:${error}`}
         sura={sura}
         aya={aya}
         words={words}
+        error={error}
         headless
         quotes="no"
         inline="no"

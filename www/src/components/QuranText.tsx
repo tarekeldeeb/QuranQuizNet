@@ -10,6 +10,7 @@ export interface QuranTextProps {
   sura: number;     // 1-based sura number (web only)
   aya: number;      // 1-based aya number within the sura (web only)
   words: string;    // "start-end", counted from the aya start (web only)
+  error?: string;   // 1-based inclusive word range with error-highlight styling
   // Hide the crossed-into sura's name (web only). Pass true until the excerpt reaches
   // that sura's own real (post-basmala) content — see QuizCard's reachesNewSuraContent.
   hideTitle: boolean;
