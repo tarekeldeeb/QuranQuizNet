@@ -125,7 +125,8 @@
     "reloginBody": "به دلایل امنیتی، لطفاً پیش از حذف حساب، خارج شده و دوباره وارد شوید.",
     "errorTitle": "خطا",
     "errorBody": "حذف حساب ناموفق بود. لطفاً بعداً دوباره تلاش کنید.",
-    "version": "نسخه {{version}}"
+    "version": "نسخه {{version}}",
+    "title": "تنظیمات"
   },
   "me": {
     "duration": {
@@ -358,7 +359,9 @@
     "filterGood": "خوب",
     "filterWeak": "ضعیف",
     "correctOf": "{{correct}} درست از {{questions}}",
-    "notTested": "هنوز آزموده نشده"
+    "notTested": "هنوز آزموده نشده",
+    "tabJuz": "جزء",
+    "tabSuras": "سوره‌ها"
   },
   "auth": {
     "heroTitle": "آزمون قرآن",

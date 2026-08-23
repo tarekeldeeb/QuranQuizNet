@@ -6,13 +6,15 @@
 // is the explicit, secondary control for which parts count toward the profile.
 import { useEffect, useRef, useState } from 'react';
 import {
-  View, Text, FlatList, Switch, Animated, Platform, StyleSheet,
+  View, Text, FlatList, ScrollView, Switch, Animated, Platform, StyleSheet,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useProfileStore, CORRECT_RATIO_RANGE, tierFromRatioRange } from '../../src/stores/profileStore';
+import JuzMap from '../../src/components/JuzMap';
+import { computeJuzMap } from '../../src/models/juzMap';
 import KhatamStar from '../../src/components/KhatamStar';
 import PressScale from '../../src/components/PressScale';
 import { useTheme, localeNum, radii } from '../../src/theme/tokens';
@@ -96,12 +98,15 @@ function ActiveCountBadge({ value, color, bg }: { value: number; color: string; 
   );
 }
 
+type Tab = 'juz' | 'suras';
+
 export default function MapScreen() {
   const { t } = useTranslation();
   const { isRTL, language } = useDirection();
   const { colors } = useTheme();
   const router = useRouter();
   const profile = useProfileStore();
+  const [activeTab, setActiveTab] = useState<Tab>('juz');
 
   function togglePart(index: number) {
     if (index === 0) return;
@@ -132,64 +137,101 @@ export default function MapScreen() {
 
   const activeParts = profile.parts.filter((p) => p.checked).length;
 
+  const TABS: { key: Tab; label: string }[] = [
+    { key: 'juz', label: t('map.tabJuz') },
+    { key: 'suras', label: t('map.tabSuras') },
+  ];
+
   return (
     <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={['top', 'bottom']}>
       <View style={[s.header, { borderColor: colors.line, flexDirection: rowDir(isRTL) }]}>
-        <PressScale onPress={() => router.back()} hitSlop={10} style={s.backBtn}>
+        {/* Always navigate home — avoids going back into pvp-journey or other
+            drawer-opened screens when history has them in the stack. */}
+        <PressScale onPress={() => router.navigate('/(app)/me')} hitSlop={10} style={s.backBtn}>
           <Ionicons name={mirror(isRTL, 'chevron-back', 'chevron-forward')} size={22} color={colors.ink} />
         </PressScale>
         <Text style={[s.title, { color: colors.ink, fontFamily: 'Amiri-Regular' }]}>{t('map.title')}</Text>
         <ActiveCountBadge value={activeParts} color={colors.goldDeep} bg={colors.goldPale} />
       </View>
 
-      <View style={[s.filterRow, { flexDirection: rowDir(isRTL) }]}>
-        {(([ ['all', t('map.filterAll')], ['good', t('map.filterGood')], ['weak', t('map.filterWeak')] ]) as [BulkAction, string][]).map(([action, label]) => (
-          <PressScale
-            key={action}
-            style={[s.filterBtn, { backgroundColor: colors.card, borderColor: colors.line }]}
-            onPress={() => applyBulk(action)}
-          >
-            <Text style={[s.filterBtnTxt, { color: colors.ink }]}>{label}</Text>
-          </PressScale>
-        ))}
+      {/* Tab bar */}
+      <View style={[s.tabBar, { borderBottomColor: colors.line, flexDirection: rowDir(isRTL) }]}>
+        {TABS.map((tab) => {
+          const active = activeTab === tab.key;
+          return (
+            <PressScale
+              key={tab.key}
+              style={[s.tabBtn, active && { borderBottomColor: colors.gold }]}
+              onPress={() => setActiveTab(tab.key)}
+            >
+              <Text style={[s.tabLabel, { color: active ? colors.gold : colors.inkSoft }]}>{tab.label}</Text>
+            </PressScale>
+          );
+        })}
       </View>
 
-      <FlatList
-        data={profile.parts}
-        keyExtractor={(_, i) => String(i)}
-        contentContainerStyle={s.list}
-        ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-        renderItem={({ item: part, index }) => {
-          const range = profile.getCorrectRatioRange(index);
-          const tier = tierFromRatioRange(range);
-          const correct = part.numCorrect[1] + part.numCorrect[2] + part.numCorrect[3] + (part.numCorrect[4] ?? 0);
-          const questions = part.numQuestions[1] + part.numQuestions[2] + part.numQuestions[3] + (part.numQuestions[4] ?? 0);
-          return (
-            <View style={[s.row, { backgroundColor: colors.card, opacity: part.checked ? 1 : 0.6, flexDirection: rowDir(isRTL) }]}>
+      {activeTab === 'juz' ? (
+        <ScrollView contentContainerStyle={s.juzScroll}>
+          <View style={[s.juzCard, { backgroundColor: colors.navy }]}>
+            <JuzMap
+              cells={computeJuzMap(profile.parts, (i) => tierFromRatioRange(profile.getCorrectRatioRange(i)))}
+              language={language}
+              isRTL={isRTL}
+            />
+          </View>
+        </ScrollView>
+      ) : (
+        <>
+          <View style={[s.filterRow, { flexDirection: rowDir(isRTL) }]}>
+            {(([ ['all', t('map.filterAll')], ['good', t('map.filterGood')], ['weak', t('map.filterWeak')] ]) as [BulkAction, string][]).map(([action, label]) => (
               <PressScale
-                style={[s.rowMain, { flexDirection: rowDir(isRTL) }]}
-                onPress={() => router.push({ pathname: '/(app)/quiz', params: { customPart: String(index), nonce: String(Date.now()) } })}
+                key={action}
+                style={[s.filterBtn, { backgroundColor: colors.card, borderColor: colors.line }]}
+                onPress={() => applyBulk(action)}
               >
-                <KhatamStar tier={tier} size={38} colors={colors} />
-                <View style={[s.rowInfo, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-                  <Text style={[s.rowName, { color: colors.ink, textAlign: alignDir(isRTL) }]} numberOfLines={1}>{translatePartName(part.name)}</Text>
-                  <Text style={[s.rowSub, { color: colors.inkSoft, textAlign: alignDir(isRTL) }]}>
-                    {questions > 0 ? t('map.correctOf', { correct: localeNum(correct, language), questions: localeNum(questions, language) }) : t('map.notTested')}
-                  </Text>
-                </View>
+                <Text style={[s.filterBtnTxt, { color: colors.ink }]}>{label}</Text>
               </PressScale>
-              <Switch
-                value={part.checked}
-                onValueChange={() => togglePart(index)}
-                disabled={index === 0}
-                trackColor={{ false: colors.line, true: colors.gold }}
-                thumbColor="#fff"
-                style={switchStyle(isRTL)}
-              />
-            </View>
-          );
-        }}
-      />
+            ))}
+          </View>
+
+          <FlatList
+            data={profile.parts}
+            keyExtractor={(_, i) => String(i)}
+            contentContainerStyle={s.list}
+            ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+            renderItem={({ item: part, index }) => {
+              const range = profile.getCorrectRatioRange(index);
+              const tier = tierFromRatioRange(range);
+              const correct = part.numCorrect[1] + part.numCorrect[2] + part.numCorrect[3] + (part.numCorrect[4] ?? 0);
+              const questions = part.numQuestions[1] + part.numQuestions[2] + part.numQuestions[3] + (part.numQuestions[4] ?? 0);
+              return (
+                <View style={[s.row, { backgroundColor: colors.card, opacity: part.checked ? 1 : 0.6, flexDirection: rowDir(isRTL) }]}>
+                  <PressScale
+                    style={[s.rowMain, { flexDirection: rowDir(isRTL) }]}
+                    onPress={() => router.push({ pathname: '/(app)/quiz', params: { customPart: String(index), nonce: String(Date.now()) } })}
+                  >
+                    <KhatamStar tier={tier} size={38} colors={colors} />
+                    <View style={[s.rowInfo, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
+                      <Text style={[s.rowName, { color: colors.ink, textAlign: alignDir(isRTL) }]} numberOfLines={1}>{translatePartName(part.name)}</Text>
+                      <Text style={[s.rowSub, { color: colors.inkSoft, textAlign: alignDir(isRTL) }]}>
+                        {questions > 0 ? t('map.correctOf', { correct: localeNum(correct, language), questions: localeNum(questions, language) }) : t('map.notTested')}
+                      </Text>
+                    </View>
+                  </PressScale>
+                  <Switch
+                    value={part.checked}
+                    onValueChange={() => togglePart(index)}
+                    disabled={index === 0}
+                    trackColor={{ false: colors.line, true: colors.gold }}
+                    thumbColor="#fff"
+                    style={switchStyle(isRTL)}
+                  />
+                </View>
+              );
+            }}
+          />
+        </>
+      )}
     </SafeAreaView>
   );
 }
@@ -212,6 +254,14 @@ const s = StyleSheet.create({
     borderRadius: radii.pill,
   },
   countNum: { fontSize: 14, fontFamily: 'PlexArabic-Bold', minWidth: 14, textAlign: 'center' },
+  tabBar: { flexDirection: 'row', borderBottomWidth: 1 },
+  tabBtn: {
+    flex: 1, alignItems: 'center', paddingVertical: 11,
+    borderBottomWidth: 2, borderBottomColor: 'transparent',
+  },
+  tabLabel: { fontSize: 14, fontFamily: 'PlexArabic-SemiBold' },
+  juzScroll: { padding: 16 },
+  juzCard: { borderRadius: radii.lg, padding: 16 },
   filterRow: { padding: 12, gap: 8 },
   filterBtn: { flex: 1, paddingVertical: 9, borderRadius: radii.md, alignItems: 'center', borderWidth: 1 },
   filterBtnTxt: { fontSize: 13, fontFamily: 'PlexArabic-SemiBold' },

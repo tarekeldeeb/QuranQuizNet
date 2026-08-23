@@ -125,7 +125,8 @@
     "reloginBody": "لأسباب أمنية، سجّل الخروج ثم ادخل مرة أخرى قبل حذف الحساب.",
     "errorTitle": "خطأ",
     "errorBody": "تعذر حذف الحساب. حاول مرة أخرى لاحقاً.",
-    "version": "الإصدار {{version}}"
+    "version": "الإصدار {{version}}",
+    "title": "الإعدادات"
   },
   "me": {
     "duration": {
@@ -367,7 +368,9 @@
     "filterGood": "الجيد",
     "filterWeak": "الضعيف",
     "correctOf": "{{correct}} صحيحة من {{questions}}",
-    "notTested": "لم يُختبر بعد"
+    "notTested": "لم يُختبر بعد",
+    "tabJuz": "الأجزاء",
+    "tabSuras": "السور"
   },
   "auth": {
     "heroTitle": "شبكة اختبار القرآن",

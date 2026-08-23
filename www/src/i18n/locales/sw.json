@@ -125,7 +125,8 @@
     "reloginBody": "Kwa sababu za usalama, tafadhali toka kisha ingia tena kabla ya kufuta akaunti yako.",
     "errorTitle": "Hitilafu",
     "errorBody": "Imeshindwa kufuta akaunti. Tafadhali jaribu tena baadaye.",
-    "version": "Toleo {{version}}"
+    "version": "Toleo {{version}}",
+    "title": "Mipangilio"
   },
   "me": {
     "duration": {
@@ -358,7 +359,9 @@
     "filterGood": "Nzuri",
     "filterWeak": "Dhaifu",
     "correctOf": "sahihi {{correct}} kati ya {{questions}}",
-    "notTested": "Bado haijajaribiwa"
+    "notTested": "Bado haijajaribiwa",
+    "tabJuz": "Juz",
+    "tabSuras": "Sura"
   },
   "auth": {
     "heroTitle": "Quran Quiz Net",

@@ -125,7 +125,8 @@
     "reloginBody": "حفاظتی وجہاں کرکے، اکاؤنٹ مٹاؤن توں پہلاں سائن آؤٹ کرو تے مُڑ سائن ان کرو۔",
     "errorTitle": "غلطی",
     "errorBody": "اکاؤنٹ مٹاؤن وچ ناکامی ہوئی۔ براہ کرم بعد وچ مُڑ کوشش کرو۔",
-    "version": "ورژن {{version}}"
+    "version": "ورژن {{version}}",
+    "title": "ਸੈਟਿੰਗਾਂ"
   },
   "me": {
     "duration": {
@@ -358,7 +359,9 @@
     "filterGood": "چنگا",
     "filterWeak": "کمزور",
     "correctOf": "{{questions}} وچوں {{correct}} صحیح",
-    "notTested": "ہالے تیک نئیں پرکھیا گیا"
+    "notTested": "ہالے تیک نئیں پرکھیا گیا",
+    "tabJuz": "ਜੁਜ਼",
+    "tabSuras": "ਸੂਰਤਾਂ"
   },
   "auth": {
     "heroTitle": "قرآن کوئز نیٹ",

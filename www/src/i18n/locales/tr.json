@@ -125,7 +125,8 @@
     "reloginBody": "Güvenlik nedeniyle, hesabınızı silmeden önce lütfen çıkış yapıp tekrar giriş yapın.",
     "errorTitle": "Hata",
     "errorBody": "Hesap silinemedi. Lütfen daha sonra tekrar deneyin.",
-    "version": "Sürüm {{version}}"
+    "version": "Sürüm {{version}}",
+    "title": "Ayarlar"
   },
   "me": {
     "duration": {
@@ -358,7 +359,9 @@
     "filterGood": "İyi",
     "filterWeak": "Zayıf",
     "correctOf": "{{questions}} sorudan {{correct}} doğru",
-    "notTested": "Henüz test edilmedi"
+    "notTested": "Henüz test edilmedi",
+    "tabJuz": "Cüz",
+    "tabSuras": "Sureler"
   },
   "auth": {
     "heroTitle": "Kur'an Test Ağı",

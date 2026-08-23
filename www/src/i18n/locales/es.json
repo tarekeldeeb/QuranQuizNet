@@ -125,7 +125,8 @@
     "reloginBody": "Por razones de seguridad, cierra sesión y vuelve a iniciarla antes de eliminar tu cuenta.",
     "errorTitle": "Error",
     "errorBody": "No se pudo eliminar la cuenta. Inténtalo de nuevo más tarde.",
-    "version": "Versión {{version}}"
+    "version": "Versión {{version}}",
+    "title": "Ajustes"
   },
   "me": {
     "duration": {
@@ -361,7 +362,9 @@
     "filterGood": "Bien",
     "filterWeak": "Débil",
     "correctOf": "{{correct}} correctas de {{questions}}",
-    "notTested": "Aún no evaluado"
+    "notTested": "Aún no evaluado",
+    "tabJuz": "Juz",
+    "tabSuras": "Suras"
   },
   "auth": {
     "heroTitle": "Quran Quiz Net",
