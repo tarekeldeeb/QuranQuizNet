@@ -16,8 +16,15 @@ Bengali, Urdu, Hausa, and Javanese.
 
 **[:white_check_mark: Play now — app.quranquiz.net](https://app.quranquiz.net)**
 
-No install, no signup — a full offline-capable PWA. Native iOS/Android apps
-are in progress. Still in beta and evolving fast.
+No install, no signup — a full offline-capable PWA. Native iOS and Android
+apps are also available:
+
+<p>
+<a href="https://apps.apple.com/app/id6790435986"><img alt="Download on the App Store" src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" height="40"></a>
+<a href="https://play.google.com/store/apps/details?id=net.quranquiz"><img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" height="55"></a>
+</p>
+
+Still in beta and evolving fast.
 
 ## Why it's different
 
