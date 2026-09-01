@@ -409,8 +409,9 @@ export default function FriendsScreen() {
     return b.streak - a.streak;
   });
 
+  // No 'bottom' edge: the tab bar reserves the bottom safe-area inset itself.
   return (
-    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={['top', 'bottom']}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={['top']}>
       {/* In-page Header */}
       <View style={[s.header, { borderColor: colors.line, flexDirection: rowDir(isRTL) }]}>
         <PressScale onPress={() => router.back()} hitSlop={10} style={s.backBtn}>

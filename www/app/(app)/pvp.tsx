@@ -871,8 +871,9 @@ export default function PvpScreen() {
     : outcome === 'loss' ? t('pvp.outcome.lossSub')
     : t('pvp.outcome.drawSub');
 
+  // No 'bottom' edge: the tab bar reserves the bottom safe-area inset itself.
   return (
-    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={['bottom']}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={[]}>
 
       {/* ── Idle: intro — real opponent first, bot fallback if none found ── */}
       {phase === 'idle' && (

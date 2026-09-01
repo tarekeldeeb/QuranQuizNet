@@ -72,8 +72,9 @@ export default function AddByCodeScreen() {
     };
   }, [code, social.uid, social.displayName, social.photoURL]);
 
+  // No 'bottom' edge: the tab bar reserves the bottom safe-area inset itself.
   return (
-    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={['top', 'bottom']}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={['top']}>
       {/* Header */}
       <View style={[s.header, { borderColor: colors.line, flexDirection: rowDir(isRTL) }]}>
         <PressScale onPress={() => router.back()} hitSlop={10} style={s.backBtn}>

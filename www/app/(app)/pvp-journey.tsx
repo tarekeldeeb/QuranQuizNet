@@ -56,8 +56,9 @@ export default function PvpJourneyScreen() {
   const nextCityLabel = tierInfo.nextCity ? cityName(tierInfo.nextCity.id) : null;
   const fadeStops = useMemo(() => rowFadeStops(isRTL), [isRTL]);
 
+  // No 'bottom' edge: the tab bar reserves the bottom safe-area inset itself.
   return (
-    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={['top', 'bottom']}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={['top']}>
       <View style={[s.header, { borderColor: colors.line, flexDirection: rowDir(isRTL) }]}>
         <PressScale onPress={() => router.back()} hitSlop={10} style={s.backBtn}>
           <Ionicons name={mirror(isRTL, 'chevron-back', 'chevron-forward')} size={22} color={colors.ink} />

@@ -206,8 +206,9 @@ export default function LeagueScreen() {
     );
   }
 
+  // No 'bottom' edge: the tab bar reserves the bottom safe-area inset itself.
   return (
-    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={['bottom']}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={[]}>
       <ScrollView style={s.scrollView} contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
         {/* Compact daily challenge strip */}

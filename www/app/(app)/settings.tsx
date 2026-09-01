@@ -197,8 +197,9 @@ export default function SettingsScreen() {
     }
   }
 
+  // No 'bottom' edge: the tab bar reserves the bottom safe-area inset itself.
   return (
-    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={['bottom']}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={[]}>
       <ScrollView style={s.scrollView} contentContainerStyle={s.scroll}>
         {/* Appearance */}
         <View style={[s.section, { backgroundColor: colors.card }]}>

@@ -522,8 +522,11 @@ export default function MeScreen() {
   const startQuiz = () => router.push({ pathname: '/(app)/quiz', params: { chooser: '1', nonce: String(Date.now()) } });
   const startPvp = () => router.push('/(app)/pvp');
 
+  // No 'bottom' edge: the tab bar itself now reserves the bottom safe-area
+  // inset (see (app)/_layout.tsx), so adding it here too would double it,
+  // leaving a dead gap between the scroll content and the tab bar.
   return (
-    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={['bottom']}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={[]}>
       <UpdateBanner update={pendingUpdate} onDismiss={dismissUpdate} />
       {!pendingUpdate && <TipBanner />}
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>

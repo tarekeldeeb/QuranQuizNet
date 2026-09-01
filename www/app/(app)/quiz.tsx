@@ -1121,8 +1121,9 @@ export default function QuizScreen() {
     : 0;
   const weakestPart = profile.getTopBadParts()[0];
 
+  // No 'bottom' edge: the tab bar reserves the bottom safe-area inset itself.
   return (
-    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={['bottom']}>
+    <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={[]}>
       {loading && cards.length === 0 && !chooserVisible && (
         <View style={[s.loadingOverlay, { backgroundColor: colors.paper }]}>
           <ActivityIndicator size="large" color={colors.ink} />
