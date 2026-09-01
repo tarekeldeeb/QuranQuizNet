@@ -2,6 +2,7 @@
 import { Tabs, useRouter, usePathname } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Image, Text, View, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import {
   onAuthChange, fetchRemoteProfile, pushCurrentProfile, armPresence,
@@ -91,6 +92,7 @@ export default function AppLayout() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const { isRTL } = useDirection();
+  const insets = useSafeAreaInsets();
 
   const userUid = profile.social.uid || profile.uid;
   useEffect(() => {
@@ -273,7 +275,10 @@ export default function AppLayout() {
         // metrics run taller than a system font at the same size, and the
         // previous 60/11px combo was clipping the bottom of "الرئيسية" and
         // "البطولة" against the bar's fixed height.
-        tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.line, height: 66, paddingBottom: 8, paddingTop: 6 },
+        // height/paddingBottom fold in the bottom safe-area inset (the Android
+        // 3-button/gesture nav bar or the iOS home indicator) so edge-to-edge
+        // content and the tab bar's own labels never sit behind the system bar.
+        tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.line, height: 66 + insets.bottom, paddingBottom: 8 + insets.bottom, paddingTop: 6 },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '700', lineHeight: 14 },
         tabBarShowLabel: true,
         headerTitleAlign: 'center',
