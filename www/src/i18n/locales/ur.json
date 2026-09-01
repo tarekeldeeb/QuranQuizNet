@@ -125,7 +125,8 @@
     "reloginBody": "حفاظتی وجوہات کی بنا پر، اکاؤنٹ حذف کرنے سے پہلے سائن آؤٹ کریں اور دوبارہ سائن ان کریں۔",
     "errorTitle": "خرابی",
     "errorBody": "اکاؤنٹ حذف کرنے میں ناکامی ہوئی۔ براہ کرم بعد میں دوبارہ کوشش کریں۔",
-    "version": "ورژن {{version}}"
+    "version": "ورژن {{version}}",
+    "title": "ترتیبات"
   },
   "me": {
     "duration": {
@@ -358,7 +359,9 @@
     "filterGood": "اچھا",
     "filterWeak": "کمزور",
     "correctOf": "{{questions}} میں سے {{correct}} درست",
-    "notTested": "ابھی تک نہیں آزمایا گیا"
+    "notTested": "ابھی تک نہیں آزمایا گیا",
+    "tabJuz": "پارہ",
+    "tabSuras": "سورتیں"
   },
   "auth": {
     "heroTitle": "قرآن کوئز نیٹ",

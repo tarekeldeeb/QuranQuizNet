@@ -125,7 +125,8 @@
     "reloginBody": "Kanggo alesan keamanan, mangga metu banjur mlebu maneh sadurunge ngapus akun sampeyan.",
     "errorTitle": "Kesalahan",
     "errorBody": "Gagal ngapus akun. Mangga coba maneh mengko.",
-    "version": "Versi {{version}}"
+    "version": "Versi {{version}}",
+    "title": "Setelan"
   },
   "me": {
     "duration": {
@@ -355,7 +356,9 @@
     "filterGood": "Apik",
     "filterWeak": "Lemah",
     "correctOf": "{{correct}} bener saka {{questions}}",
-    "notTested": "Durung diuji"
+    "notTested": "Durung diuji",
+    "tabJuz": "Juz",
+    "tabSuras": "Surat"
   },
   "auth": {
     "heroTitle": "Jaringan Kuis Quran",

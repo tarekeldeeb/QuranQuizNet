@@ -125,7 +125,8 @@
     "reloginBody": "Untuk alasan keamanan, silakan keluar lalu masuk kembali sebelum menghapus akun Anda.",
     "errorTitle": "Kesalahan",
     "errorBody": "Gagal menghapus akun. Silakan coba lagi nanti.",
-    "version": "Versi {{version}}"
+    "version": "Versi {{version}}",
+    "title": "Pengaturan"
   },
   "me": {
     "duration": {
@@ -355,7 +356,9 @@
     "filterGood": "Baik",
     "filterWeak": "Lemah",
     "correctOf": "{{correct}} benar dari {{questions}}",
-    "notTested": "Belum diuji"
+    "notTested": "Belum diuji",
+    "tabJuz": "Juz",
+    "tabSuras": "Surah"
   },
   "auth": {
     "heroTitle": "Jaringan Kuis Quran",

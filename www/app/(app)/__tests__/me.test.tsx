@@ -16,6 +16,7 @@ jest.mock('expo-router', () => ({
 
 const mockGetDailyHead = jest.fn();
 const mockSignOut = jest.fn((..._a: unknown[]) => Promise.resolve());
+const mockDeleteAccount = jest.fn((..._a: unknown[]) => Promise.resolve());
 const mockSignInGoogle = jest.fn((..._a: unknown[]) => Promise.resolve({ uid: 'g1' }));
 const mockSignInFacebook = jest.fn((..._a: unknown[]) => Promise.resolve({ uid: 'f1' }));
 const mockSignInApple = jest.fn((..._a: unknown[]) => Promise.resolve({ uid: 'a1' }));
@@ -24,6 +25,7 @@ jest.mock('../../../src/services/firebase', () => ({
   getDailyHead: (...a: unknown[]) => mockGetDailyHead(...a),
   getTodayStandings: jest.fn(() => Promise.resolve([])),
   signOut: (...a: unknown[]) => mockSignOut(...a),
+  deleteAccount: (...a: unknown[]) => mockDeleteAccount(...a),
   signInGoogle: (...a: unknown[]) => mockSignInGoogle(...a),
   signInFacebook: (...a: unknown[]) => mockSignInFacebook(...a),
   signInApple: (...a: unknown[]) => mockSignInApple(...a),
@@ -52,7 +54,7 @@ jest.mock('../../../src/services/updateCheck', () => ({
 
 import React from 'react';
 import { Alert, Share } from 'react-native';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import MeScreen from '../me';
 import { useProfileStore, StudyPart } from '../../../src/stores/profileStore';
@@ -71,6 +73,7 @@ beforeEach(() => {
   mockPush.mockClear(); mockReplace.mockClear(); mockSetOptions.mockClear();
   mockInitDailyQuiz.mockClear(); mockGetDailyHead.mockReset();
   mockSignOut.mockReset(); mockSignOut.mockResolvedValue(undefined);
+  mockDeleteAccount.mockReset(); mockDeleteAccount.mockResolvedValue(undefined);
   mockSignInGoogle.mockReset(); mockSignInGoogle.mockResolvedValue({ uid: 'g1' });
   mockSignInFacebook.mockReset(); mockSignInFacebook.mockResolvedValue({ uid: 'f1' });
   mockSignInApple.mockReset(); mockSignInApple.mockResolvedValue({ uid: 'a1' });
@@ -160,6 +163,122 @@ describe('Me dashboard — guest upgrade [bug #3]', () => {
 
     await waitFor(() => expect(mockSignInGoogle).toHaveBeenCalled());
     await waitFor(() => expect(alertSpy).toHaveBeenCalledWith('خطأ', expect.any(String)));
+    alertSpy.mockRestore();
+  });
+});
+
+// Sign-out and delete-account moved from settings.test.tsx when those actions
+// moved out of settings.tsx and into the drawer menu on the Me screen.
+//
+// The drawer (DrawerMenu) is a Modal that starts hidden — RNTL doesn't render
+// Modal children until visible=true. The hamburger button lives in the
+// navigation header via navigation.setOptions, so it doesn't appear in the
+// main component tree. We open the drawer by extracting the headerLeft
+// element from the mocked setOptions and directly invoking its onPress,
+// which calls setDrawerOpen(true) on the original MeScreen instance via
+// closure — the state update makes the Modal visible in the main tree.
+async function openDrawer() {
+  await waitFor(() => expect(mockSetOptions).toHaveBeenCalled());
+  const lastOptions = mockSetOptions.mock.calls[mockSetOptions.mock.calls.length - 1][0] as {
+    headerLeft?: () => React.ReactElement;
+  };
+  const headerLeftEl = lastOptions.headerLeft?.();
+  await act(async () => { (headerLeftEl?.props as { onPress?: () => void })?.onPress?.(); });
+}
+
+describe('Me dashboard — sign out [bug #2]', () => {
+  // Auto-confirm the "are you sure?" dialog by invoking the destructive button.
+  function autoConfirmAlert() {
+    return jest.spyOn(Alert, 'alert').mockImplementation((_t, _m, buttons) => {
+      (buttons as { style?: string; onPress?: () => void }[] | undefined)
+        ?.find((b) => b.style === 'destructive')?.onPress?.();
+    });
+  }
+
+  it('does NOT navigate to /(auth) until signOut() has resolved', async () => {
+    // Hold signOut open so we can observe that navigation waits for it.
+    let resolveSignOut!: () => void;
+    mockSignOut.mockReturnValue(new Promise<void>((r) => { resolveSignOut = r; }));
+    const alertSpy = autoConfirmAlert();
+    mockGetDailyHead.mockResolvedValue(null);
+
+    const { findByText } = renderMe();
+    await openDrawer();
+    fireEvent.press(await findByText('تسجيل الخروج'));
+
+    // signOut is still pending → the auth-screen redirect must not have fired.
+    await act(async () => { await Promise.resolve(); });
+    expect(mockReplace).not.toHaveBeenCalledWith('/(auth)');
+
+    await act(async () => { resolveSignOut(); await Promise.resolve(); });
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(auth)'));
+    expect(mockSignOut).toHaveBeenCalled();
+
+    alertSpy.mockRestore();
+  });
+});
+
+describe('Me dashboard — delete account', () => {
+  it('does not call deleteAccount just from opening the confirmation sheet', async () => {
+    mockGetDailyHead.mockResolvedValue(null);
+    const { findByText } = renderMe();
+    await openDrawer();
+    fireEvent.press(await findByText('حذف الحساب'));
+    await findByText('حذف الحساب نهائياً؟'); // sheet title proves it opened
+    expect(mockDeleteAccount).not.toHaveBeenCalled();
+  });
+
+  it('cancel closes the sheet without deleting anything', async () => {
+    mockGetDailyHead.mockResolvedValue(null);
+    const { findByText, queryByText } = renderMe();
+    await openDrawer();
+    fireEvent.press(await findByText('حذف الحساب'));
+    await findByText('حذف الحساب نهائياً؟');
+
+    fireEvent.press(await findByText('إلغاء'));
+
+    expect(mockDeleteAccount).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalledWith('/(auth)');
+    await waitFor(() => expect(queryByText('حذف الحساب نهائياً؟')).toBeNull());
+  });
+
+  it('confirm deletes the account and redirects — waiting for deleteAccount to resolve first', async () => {
+    let resolveDelete!: () => void;
+    mockDeleteAccount.mockReturnValue(new Promise<void>((r) => { resolveDelete = r; }));
+    mockGetDailyHead.mockResolvedValue(null);
+
+    const { findByText } = renderMe();
+    await openDrawer();
+    fireEvent.press(await findByText('حذف الحساب'));
+    await findByText('حذف الحساب نهائياً؟');
+    fireEvent.press(await findByText('حذف الحساب نهائياً')); // confirm button (no "؟" — distinct from the title)
+
+    // deleteAccount is still pending → must not have navigated on a stale session.
+    await act(async () => { await Promise.resolve(); });
+    expect(mockReplace).not.toHaveBeenCalledWith('/(auth)');
+
+    await act(async () => { resolveDelete(); await Promise.resolve(); });
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/(auth)'));
+    expect(mockDeleteAccount).toHaveBeenCalled();
+  });
+
+  it('shows a generic error and does not navigate when deleteAccount fails', async () => {
+    mockDeleteAccount.mockRejectedValue(new Error('network blip'));
+    mockGetDailyHead.mockResolvedValue(null);
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    const { findByText } = renderMe();
+    await openDrawer();
+    fireEvent.press(await findByText('حذف الحساب'));
+    await findByText('حذف الحساب نهائياً؟');
+    fireEvent.press(await findByText('حذف الحساب نهائياً'));
+
+    await waitFor(() => expect(mockDeleteAccount).toHaveBeenCalled());
+    await act(async () => { await Promise.resolve(); });
+
+    expect(mockReplace).not.toHaveBeenCalledWith('/(auth)');
+    expect(alertSpy).toHaveBeenCalledWith('خطأ', expect.any(String));
+
     alertSpy.mockRestore();
   });
 });

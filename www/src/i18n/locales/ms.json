@@ -125,7 +125,8 @@
     "reloginBody": "Atas sebab keselamatan, sila log keluar dan log masuk semula sebelum memadam akaun anda.",
     "errorTitle": "Ralat",
     "errorBody": "Gagal memadam akaun. Sila cuba lagi kemudian.",
-    "version": "Versi {{version}}"
+    "version": "Versi {{version}}",
+    "title": "Tetapan"
   },
   "me": {
     "duration": {
@@ -355,7 +356,9 @@
     "filterGood": "Baik",
     "filterWeak": "Lemah",
     "correctOf": "{{correct}} betul daripada {{questions}}",
-    "notTested": "Belum diuji"
+    "notTested": "Belum diuji",
+    "tabJuz": "Juz",
+    "tabSuras": "Surah"
   },
   "auth": {
     "heroTitle": "Quran Quiz Net",

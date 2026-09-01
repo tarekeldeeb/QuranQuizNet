@@ -125,7 +125,8 @@
     "reloginBody": "出于安全原因,请先退出登录,然后重新登录后再删除账户。",
     "errorTitle": "错误",
     "errorBody": "删除账户失败,请稍后重试。",
-    "version": "版本 {{version}}"
+    "version": "版本 {{version}}",
+    "title": "设置"
   },
   "me": {
     "duration": {
@@ -355,7 +356,9 @@
     "filterGood": "熟练",
     "filterWeak": "薄弱",
     "correctOf": "{{questions}} 题中答对 {{correct}} 题",
-    "notTested": "尚未测试"
+    "notTested": "尚未测试",
+    "tabJuz": "章节",
+    "tabSuras": "章"
   },
   "auth": {
     "heroTitle": "古兰经问答网",

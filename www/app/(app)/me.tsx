@@ -1,19 +1,19 @@
 import { useEffect, useState } from 'react';
 import {
-  View, Text, Image, StyleSheet, ScrollView,
+  View, Text, StyleSheet, ScrollView,
   Alert, ActivityIndicator, Modal, Platform, Share, TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { useRouter, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useTranslation } from 'react-i18next';
 import {
-  signInGoogle, signInFacebook, signInApple, getDailyHead, getTodayStandings, pushCurrentProfile, type DailyHead,
+  signInGoogle, signInFacebook, signInApple, signOut, deleteAccount,
+  getDailyHead, getTodayStandings, pushCurrentProfile, type DailyHead,
 } from '../../src/services/firebase';
-import { useProfileStore, tierFromRatioRange } from '../../src/stores/profileStore';
+import { useProfileStore } from '../../src/stores/profileStore';
 import * as QS from '../../src/services/questionnaireService';
 import { DEFAULT_GUEST_NAME, translatePartName } from '../../src/models/constants';
 import { Avatar } from '../../src/components/Avatar';
@@ -24,65 +24,17 @@ import { scheduleDailyReminder } from '../../src/services/notifications';
 import { useUpdateAvailable } from '../../src/services/updateCheck';
 import { describeLiveRank } from '../../src/models/dailyRank';
 import { getRankInfo, getRankLadder } from '../../src/models/rank';
-import { getPvpTierInfo, PVP_TIER_COLOR } from '../../src/models/pvpTiers';
-import { CITY_IMAGES, CITY_IMAGE_ASPECT } from '../../src/models/cityImages';
 import { useTheme, arNum, localeNum, radii } from '../../src/theme/tokens';
 import { useDirection, rowDir, alignDir, mirror } from '../../src/theme/direction';
 import type { Language } from '../../src/i18n/languages';
 import PressScale from '../../src/components/PressScale';
 import Ring from '../../src/components/Ring';
-import JuzMap from '../../src/components/JuzMap';
-import { computeJuzMap } from '../../src/models/juzMap';
+import { DrawerMenu } from '../../src/components/DrawerMenu';
 
 const DAILY_PERIOD_MS = 24 * 60 * 60 * 1000;
 // Matches notifications.ts's STREAK_REMINDER_HOUR — "tonight" starts at the
 // same evening hour the streak-loss reminder itself fires.
 const EVENING_HOUR = 19;
-
-const APP_ICON = require('../../assets/images/app-icon.png');
-
-const TIER_EMOJI: Record<string, string> = {
-  bronze: '🥉', silver: '🥈', gold: '🥇', platinum: '💎', hafizGold: '🏆',
-};
-
-// Current city's photo as a soft backdrop for the PvP journey card — same
-// "fade in from the trailing edge" treatment as pvp-journey.tsx's city
-// ladder rows (see rowFadeStops there), just softened at both ends (never
-// fully opaque, never fully bare) so it reads as a semi-transparent photo
-// behind the whole card rather than a hard reveal in one corner.
-function pvpCardFadeStops(isRTL: boolean) {
-  return isRTL
-    ? [
-        { offset: '0%', opacity: 0.35 }, { offset: '15%', opacity: 0.35 },
-        { offset: '55%', opacity: 0.95 }, { offset: '100%', opacity: 0.95 },
-      ]
-    : [
-        { offset: '0%', opacity: 0.95 }, { offset: '45%', opacity: 0.95 },
-        { offset: '85%', opacity: 0.35 }, { offset: '100%', opacity: 0.35 },
-      ];
-}
-
-/** Small brand mark for the header's right slot — icon + app name, sitting
- * beside the personalized greeting (headerTitle, centered) rather than
- * replacing it the way the tab navigator's default HeaderLogo does on
- * screens with no situational title. A thin gold ring gives it a seal-like
- * finish instead of a plain square icon. */
-function HeaderBrand() {
-  const { t } = useTranslation();
-  const { isRTL } = useDirection();
-  return (
-    <View style={[hb.wrap, { flexDirection: rowDir(isRTL) }]}>
-      <Image source={APP_ICON} style={hb.icon} />
-      <Text style={[hb.name, { textAlign: alignDir(isRTL) }]}>{t('common.appName')}</Text>
-    </View>
-  );
-}
-
-const hb = StyleSheet.create({
-  wrap: { alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6 },
-  icon: { width: 24, height: 24, borderRadius: 6, borderWidth: 1, borderColor: 'rgba(217,173,85,0.6)' },
-  name: { color: '#fff', fontSize: 12, fontFamily: 'PlexArabic-Bold' },
-});
 
 /** Cross-platform alert (RN Alert is a no-op on react-native-web). */
 function notify(title: string, msg: string) {
@@ -243,6 +195,58 @@ function StreakSheet({
   );
 }
 
+/** Delete-account confirmation — full sheet, not a one-liner, since this is
+ *  the one truly irreversible action in the app. */
+function DeleteAccountSheet({
+  visible, onClose, onConfirm, deleting,
+}: {
+  visible: boolean; onClose: () => void; onConfirm: () => void; deleting: boolean;
+}) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={das.bg}>
+        <View style={[das.sheet, { backgroundColor: colors.card }]}>
+          <View style={[das.iconRing, { backgroundColor: colors.wrongPale }]}>
+            <Ionicons name="warning" size={28} color={colors.wrong} />
+          </View>
+          <Text style={[das.title, { color: colors.ink }]}>{t('settings.deleteSheetTitle')}</Text>
+          <Text style={[das.body, { color: colors.inkSoft }]}>{t('settings.deleteSheetBody')}</Text>
+          <PressScale
+            style={[das.confirmBtn, { backgroundColor: colors.wrong }, deleting && { opacity: 0.6 }]}
+            onPress={onConfirm}
+            disabled={deleting}
+          >
+            {deleting
+              ? <ActivityIndicator color="#fff" size="small" />
+              : <Text style={das.confirmTxt}>{t('settings.deleteSheetConfirm')}</Text>}
+          </PressScale>
+          <PressScale style={das.cancelBtn} onPress={onClose} disabled={deleting}>
+            <Text style={[das.cancelTxt, { color: colors.inkSoft }]}>{t('settings.cancel')}</Text>
+          </PressScale>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const das = StyleSheet.create({
+  bg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  sheet: {
+    borderTopLeftRadius: radii.lg + 4, borderTopRightRadius: radii.lg + 4,
+    padding: 24, paddingBottom: 36, alignItems: 'center', gap: 6,
+    width: '100%', maxWidth: 512, alignSelf: 'center',
+  },
+  iconRing: { width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  title: { fontSize: 17, fontFamily: 'PlexArabic-Bold', textAlign: 'center' },
+  body: { fontSize: 13, textAlign: 'center', lineHeight: 20, marginBottom: 14 },
+  confirmBtn: { width: '100%', paddingVertical: 14, borderRadius: radii.md, alignItems: 'center', justifyContent: 'center' },
+  confirmTxt: { color: '#fff', fontSize: 15, fontFamily: 'PlexArabic-Bold' },
+  cancelBtn: { paddingVertical: 12, marginTop: 2 },
+  cancelTxt: { fontSize: 14, fontFamily: 'PlexArabic-SemiBold' },
+});
+
 // A distinct badge per rank — a growing sense of accomplishment on the way
 // up, not four identical dots with different labels.
 const RANK_ICONS: React.ComponentProps<typeof Ionicons>['name'][] = ['leaf-outline', 'flame', 'book', 'trophy'];
@@ -327,16 +331,12 @@ export default function MeScreen() {
   const [dailyRankLine, setDailyRankLine] = useState<string | null>(null);
   const [nicknameModalOpen, setNicknameModalOpen] = useState(false);
   const [nicknameInput, setNicknameInput] = useState('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [streakSheetOpen, setStreakSheetOpen] = useState(false);
   const [rankSheetOpen, setRankSheetOpen] = useState(false);
-  // pvpSection has no fixed height (unlike pvp-journey.tsx's fixed-height
-  // rows) — its height comes from its text/button content, resolved after
-  // the photo-fade Svg's first layout pass. A percentage-sized Svg
-  // ("100%"/"100%") doesn't reliably track that later-resolved height on
-  // native, so the gradient overlay can end up shorter than the card,
-  // leaving its bottom uncovered. Measuring the card and passing pixel
-  // dimensions keeps the Svg in sync via a normal re-render instead.
-  const [pvpCardSize, setPvpCardSize] = useState({ width: 0, height: 0 });
+  const [signingOut, setSigningOut] = useState(false);
+  const [deleteSheetOpen, setDeleteSheetOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
 
   useEffect(() => {
     getDailyHead()
@@ -400,20 +400,18 @@ export default function MeScreen() {
   const firstName = social.displayName?.split(' ')[0] ?? '';
   const greeting = firstName ? t('me.greeting', { name: firstName }) : t('me.greetingNoName');
   useEffect(() => {
-    // headerLeft/headerRight are always physical sides (I18nManager RTL is
-    // force-disabled — see app/_layout.tsx), so the brand mark (reading-start)
-    // and the gear (a secondary, trailing action) must swap sides by hand:
-    // brand mark right + gear left in RTL, mirrored in LTR.
-    const gearButton = () => (
-      <PressScale onPress={() => router.push('/(app)/settings')} hitSlop={8} style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
-        <Ionicons name="settings-outline" size={24} color={colors.navySoft} />
-      </PressScale>
-    );
-    const brandMark = () => <HeaderBrand />;
     navigation.setOptions({
       headerTitle: () => <Text style={{ color: '#fff', fontSize: 16, fontFamily: 'PlexArabic-Bold' }}>{greeting}</Text>,
-      headerRight: isRTL ? brandMark : gearButton,
-      headerLeft: isRTL ? gearButton : brandMark,
+      headerLeft: () => (
+        <PressScale onPress={() => setDrawerOpen(true)} hitSlop={8} style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
+          <Ionicons name="menu" size={24} color={colors.navySoft} />
+        </PressScale>
+      ),
+      headerRight: () => (
+        <PressScale onPress={() => router.push('/(app)/settings')} hitSlop={8} style={{ paddingHorizontal: 10, paddingVertical: 6 }}>
+          <Ionicons name="settings-outline" size={24} color={colors.navySoft} />
+        </PressScale>
+      ),
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [greeting, isRTL]);
@@ -479,6 +477,40 @@ export default function MeScreen() {
     }
   }
 
+  async function performSignOut() {
+    setSigningOut(true);
+    try { await signOut(); } catch (e) { console.error(e); }
+    await profile.delete().catch(console.error);
+    router.replace('/(auth)');
+  }
+
+  function handleSignOut() {
+    const msg = t('settings.signOutConfirmMsg');
+    if (Platform.OS === 'web') {
+      if (typeof window === 'undefined' || window.confirm(`${t('settings.signOut')}\n\n${msg}`)) performSignOut();
+      return;
+    }
+    Alert.alert(t('settings.signOut'), msg, [
+      { text: t('settings.no'), style: 'cancel' },
+      { text: t('settings.yes'), style: 'destructive', onPress: performSignOut },
+    ]);
+  }
+
+  async function performDeleteAccount() {
+    setDeletingAccount(true);
+    try {
+      await deleteAccount();
+      await profile.delete().catch(console.error);
+      setDeleteSheetOpen(false);
+      router.replace('/(auth)');
+    } catch (e) {
+      setDeletingAccount(false);
+      setDeleteSheetOpen(false);
+      console.error(e);
+      notify(t('settings.errorTitle'), t('settings.errorBody'));
+    }
+  }
+
   // ── Derived values ──
   const score = profile.getScore();
   const yesterday = profile.scores.length >= 2
@@ -486,8 +518,6 @@ export default function MeScreen() {
     : 0;
   const trend = score - yesterday;
   const rank = getRankInfo(score);
-  const pvpTier = getPvpTierInfo(profile.pvp.points);
-  const pvpFadeStops = pvpCardFadeStops(isRTL);
 
   const today = new Date().toISOString().split('T')[0];
   // Treat an unconfirmed submission from today the same as completed — the
@@ -514,13 +544,10 @@ export default function MeScreen() {
 
   const studyPct = parseFloat(profile.getPercentTotalStudy()) || 0;
   const ratioPct = parseFloat(profile.getPercentTotalRatio()) || 0;
-  const activeParts = profile.parts.filter((p) => p.checked).length;
-  const pvpTotal = profile.pvp.wins + profile.pvp.losses + profile.pvp.draws;
 
   const avatarUri = social.photoURL && !avatarError ? social.photoURL : undefined;
 
   const startQuiz = () => router.push({ pathname: '/(app)/quiz', params: { chooser: '1', nonce: String(Date.now()) } });
-  const startPvp = () => router.push('/(app)/pvp');
 
   return (
     <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={['bottom']}>
@@ -618,75 +645,6 @@ export default function MeScreen() {
           )}
         </View>
 
-        {/* ── PvP journey section: same shape as the study section above, but
-            its own tier color (not the shared rank gold) and its own action
-            — starting a live 1v1 match, the only thing that moves this bar —
-            so the two sections read as separate systems instead of twins.
-            The current city's photo sits behind it all as a semi-transparent
-            backdrop, faded the same way as pvp-journey.tsx's city rows (see
-            pvpCardFadeStops) — clipped in its own inner view so overflow:
-            hidden never eats the outer view's shadow. ── */}
-        <View style={s.bentoFull}>
-          <View
-            style={[s.progressSection, s.pvpSection, { backgroundColor: colors.card }]}
-            onLayout={(e) => setPvpCardSize({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
-          >
-            <View style={[StyleSheet.absoluteFill, s.pvpPhotoClip]}>
-              <Image
-                source={CITY_IMAGES[pvpTier.city.id]}
-                style={{ width: '100%', aspectRatio: CITY_IMAGE_ASPECT[pvpTier.city.id] }}
-              />
-            </View>
-            {pvpCardSize.height > 0 && (
-              <Svg style={StyleSheet.absoluteFill} width={pvpCardSize.width} height={pvpCardSize.height} viewBox="0 0 100 100" preserveAspectRatio="none">
-                <Defs>
-                  <LinearGradient id="pvpCardFade" x1="0" y1="0" x2="1" y2="0">
-                    {pvpFadeStops.map((stop) => (
-                      <Stop key={stop.offset} offset={stop.offset} stopColor={colors.card} stopOpacity={stop.opacity} />
-                    ))}
-                  </LinearGradient>
-                </Defs>
-                <Rect x="0" y="0" width="100" height="100" fill="url(#pvpCardFade)" />
-              </Svg>
-            )}
-
-            <Text style={[s.sectionLabel, { color: colors.inkSoft, textAlign: alignDir(isRTL) }]}>{t('pvpJourney.title')}</Text>
-            <PressScale style={[s.rankHeaderRow, { flexDirection: rowDir(isRTL) }]} onPress={() => router.push('/(app)/pvp-journey')}>
-              <View style={[s.rankBadgeSmall, { backgroundColor: colors.goldPale }]}>
-                <Text style={{ fontSize: 18 }}>{TIER_EMOJI[pvpTier.tier]}</Text>
-              </View>
-              <View style={s.rankColumn}>
-                <View style={[s.rankRow, { flexDirection: rowDir(isRTL) }]}>
-                  <View style={[s.rankTitleRow, { flexDirection: rowDir(isRTL) }]}>
-                    <Text style={[s.rankTitle, { color: colors.ink }]}>{pvpTier.cityName}</Text>
-                    <Ionicons name={mirror(isRTL, 'chevron-forward', 'chevron-back')} size={14} color={colors.inkSoft} />
-                  </View>
-                  <View style={[s.pvpTierChip, { backgroundColor: colors.card }]}>
-                    <Text style={[s.rankNext, { color: colors.inkSoft, textAlign: isRTL ? 'left' : 'right' }]}>
-                      {pvpTier.tierTitle}
-                    </Text>
-                  </View>
-                </View>
-                <View style={[s.rankTrack, { backgroundColor: colors.goldPale }]}>
-                  <View style={[s.rankFill, { width: `${pvpTier.progress * 100}%`, backgroundColor: PVP_TIER_COLOR[pvpTier.tier], [isRTL ? 'right' : 'left']: 0 }]} />
-                </View>
-              </View>
-            </PressScale>
-            <PressScale
-              style={[s.sectionActionBtn, { backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.gold, flexDirection: rowDir(isRTL) }]}
-              onPress={startPvp}
-            >
-              <Ionicons name="flash" size={18} color={colors.goldDeep} />
-              <Text style={[s.sectionActionTxt, { color: colors.goldDeep }]}>{t('pvp.idleTitle')}</Text>
-              {pvpTotal > 0 && (
-                <View style={[s.sectionBadge, { backgroundColor: colors.goldPale }]}>
-                  <Text style={[s.wayBadgeTxt, { color: colors.goldDeep }]}>{t('me.pvpWinsBadge', { count: localeNum(profile.pvp.wins, lang) })}</Text>
-                </View>
-              )}
-            </PressScale>
-          </View>
-        </View>
-
         {/* ── One hero at a time: the daily card until completed ── */}
         {dailyHead === 'loading' ? (
           <View style={[s.bentoFull, s.dailyHeroDark, { backgroundColor: colors.navy }]}>
@@ -743,27 +701,6 @@ export default function MeScreen() {
           <ProgressChart scores={profile.scores} colors={colors} />
         </View>
 
-        {/* ── The progression map — replaces the parts-editor summary card.
-            The 5×6 grid inside is the 30 ajzāʾ (components/JuzMap); tapping
-            anywhere still opens the full خريطة الحفظ editor. ── */}
-        <PressScale style={[s.bentoFull, s.mapCard, { backgroundColor: colors.navy }]} onPress={() => router.push('/(app)/map')}>
-          <View style={[s.mapHead, { flexDirection: rowDir(isRTL) }]}>
-            <Ionicons name={mirror(isRTL, 'chevron-forward', 'chevron-back')} size={18} color={colors.navySoft} />
-            <View style={[s.mapBody, { alignItems: isRTL ? 'flex-end' : 'flex-start' }]}>
-              <Text style={[s.mapTitle, { textAlign: alignDir(isRTL) }]}>{t('me.mapCard.title')}</Text>
-              <Text style={[s.mapSub, { color: colors.navySoft, textAlign: alignDir(isRTL) }]}>
-                {t('me.activeParts', { count: activeParts })} — {t('me.mapCard.tapForDetails')}
-              </Text>
-            </View>
-            <Ionicons name="map-outline" size={26} color={colors.gold} />
-          </View>
-          <JuzMap
-            cells={computeJuzMap(profile.parts, (i) => tierFromRatioRange(profile.getCorrectRatioRange(i)))}
-            language={lang}
-            isRTL={isRTL}
-          />
-        </PressScale>
-
         {/* ── Sign-in nag — demoted to a one-line banner, modern brand colors ── */}
         {social.isAnonymous && (
           <View style={[s.anonBanner, { backgroundColor: colors.card, borderColor: colors.line, flexDirection: rowDir(isRTL) }]}>
@@ -819,6 +756,48 @@ export default function MeScreen() {
         onClose={() => setRankSheetOpen(false)}
         colors={colors}
         score={score}
+      />
+
+      <DrawerMenu
+        visible={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        items={[
+          {
+            key: 'map',
+            icon: 'map-outline',
+            label: t('me.mapCard.title'),
+            onPress: () => router.push('/(app)/map'),
+          },
+          {
+            key: 'pvp-journey',
+            icon: 'flash-outline',
+            label: t('pvpJourney.title'),
+            onPress: () => router.push('/(app)/pvp-journey'),
+          },
+        ]}
+        footerItems={[
+          ...(!social.isAnonymous && social.uid ? [{
+            key: 'sign-out',
+            icon: 'log-out-outline' as const,
+            label: t('settings.signOut'),
+            onPress: handleSignOut,
+            destructive: true,
+          }] : []),
+          {
+            key: 'delete-account',
+            icon: 'trash-outline',
+            label: t('settings.deleteAccountLink'),
+            onPress: () => setDeleteSheetOpen(true),
+            destructive: true,
+          },
+        ]}
+      />
+
+      <DeleteAccountSheet
+        visible={deleteSheetOpen}
+        onClose={() => setDeleteSheetOpen(false)}
+        onConfirm={performDeleteAccount}
+        deleting={deletingAccount}
       />
 
       {/* Guest nickname picker — auto-shown once for a fresh guest, always
@@ -903,19 +882,7 @@ const s = StyleSheet.create({
   bentoRow: { gap: 12 },
   bentoHalf: { flex: 1, borderRadius: radii.lg, ...CARD_SHADOW },
 
-  // Progress section wrapper — pairs a labeled progress bar with the one
-  // action that actually drives it (study rank / PvP journey each get one).
   progressSection: { padding: 14, gap: 12 },
-  // Own borderRadius (not just bentoFull's, on its bentoFull parent) so
-  // overflow: hidden clips the city-photo backdrop to the card's rounded
-  // corners without also clipping the parent's box shadow.
-  pvpSection: { borderRadius: radii.lg, overflow: 'hidden' },
-  // Same treatment as pvp-journey.tsx's city rows: full width at the photo's
-  // own aspect ratio (never stretched/cropped horizontally), centered
-  // vertically so only the top/bottom — never the sides — get clipped by
-  // pvpSection's overflow: hidden.
-  pvpPhotoClip: { justifyContent: 'center' },
-  pvpTierChip: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: radii.pill },
   sectionLabel: { fontSize: 12, fontFamily: 'PlexArabic-Bold' },
   rankHeaderRow: { alignItems: 'flex-start', gap: 10 },
   rankBadgeSmall: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
@@ -973,8 +940,6 @@ const s = StyleSheet.create({
     paddingVertical: 12, borderRadius: radii.md,
   },
   sectionActionTxt: { fontSize: 14, fontFamily: 'PlexArabic-Bold', color: '#fff' },
-  sectionBadge: { paddingHorizontal: 7, paddingVertical: 2, borderRadius: radii.pill },
-  wayBadgeTxt: { fontSize: 10, fontFamily: 'PlexArabic-Bold' },
   wayNudge: {
     alignItems: 'center', gap: 6, padding: 10, borderRadius: radii.md,
   },
@@ -987,13 +952,6 @@ const s = StyleSheet.create({
   sparkRow: { width: '100%', alignItems: 'flex-end', justifyContent: 'center', gap: 1.5 },
   sparkBar: { flex: 1, maxWidth: 9, minWidth: 2, borderRadius: 2 },
   sparkEmpty: { fontSize: 18, fontFamily: 'PlexArabic-Bold' },
-
-  // Map card
-  mapCard: { padding: 16, gap: 12 },
-  mapHead: { alignItems: 'center', gap: 10 },
-  mapBody: { flex: 1 },
-  mapTitle: { fontSize: 15, fontFamily: 'Amiri-Regular', fontWeight: '700', color: '#fff' },
-  mapSub: { fontSize: 11, marginTop: 2 },
 
   // Sign-in nag — a compact one-liner
   anonBanner: {

@@ -299,7 +299,7 @@ export default function AppLayout() {
       <Tabs.Screen name="add/[code]" options={{ href: null, headerShown: false }} />
       <Tabs.Screen name="friends"    options={{ href: null, headerShown: false }} />
       <Tabs.Screen name="home"     options={{ href: null }} />
-      <Tabs.Screen name="settings" options={{ href: null }} />
+      <Tabs.Screen name="settings" options={{ href: null, headerShown: false }} />
     </Tabs>
 
     {pendingInvite && (

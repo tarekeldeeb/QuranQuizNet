@@ -125,7 +125,8 @@
     "reloginBody": "Saboda dalilan tsaro, da fatan za a fita sannan a shiga kuma kafin share asusun ku.",
     "errorTitle": "Kuskure",
     "errorBody": "An kasa share asusu. Da fatan a sake gwadawa daga baya.",
-    "version": "Sigar {{version}}"
+    "version": "Sigar {{version}}",
+    "title": "Saitunan"
   },
   "me": {
     "duration": {
@@ -358,7 +359,9 @@
     "filterGood": "Mai Kyau",
     "filterWeak": "Mai Rauni",
     "correctOf": "Daidai {{correct}} daga cikin {{questions}}",
-    "notTested": "Ba a gwada ba tukuna"
+    "notTested": "Ba a gwada ba tukuna",
+    "tabJuz": "Juzu'i",
+    "tabSuras": "Surori"
   },
   "auth": {
     "heroTitle": "Hanyar Sadarwar Kwiz na Alqur'ani",

@@ -125,7 +125,8 @@
     "reloginBody": "د امنیت له امله، مهرباني وکړئ لومړی ووځئ او بیا ننوځئ مخکې له دې چې حساب حذف کړئ.",
     "errorTitle": "تېروتنه",
     "errorBody": "حساب حذف نشو. مهرباني وکړئ بيا هڅه وکړئ.",
-    "version": "نسخه {{version}}"
+    "version": "نسخه {{version}}",
+    "title": "ترتیبات"
   },
   "me": {
     "duration": {
@@ -358,7 +359,9 @@
     "filterGood": "ښه",
     "filterWeak": "ضعیف",
     "correctOf": "{{correct}} سمې د {{questions}} څخه",
-    "notTested": "تراوسه ندي ازمویل شوي"
+    "notTested": "تراوسه ندي ازمویل شوي",
+    "tabJuz": "جز",
+    "tabSuras": "سورتونه"
   },
   "auth": {
     "heroTitle": "د قرآن ازموینې شبکه",

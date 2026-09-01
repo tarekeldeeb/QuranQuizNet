@@ -125,7 +125,8 @@
     "reloginBody": "For security reasons, please sign out and sign in again before deleting your account.",
     "errorTitle": "Error",
     "errorBody": "Failed to delete account. Please try again later.",
-    "version": "Version {{version}}"
+    "version": "Version {{version}}",
+    "title": "Settings"
   },
   "me": {
     "duration": {
@@ -367,7 +368,9 @@
     "filterGood": "Good",
     "filterWeak": "Weak",
     "correctOf": "{{correct}} correct of {{questions}}",
-    "notTested": "Not yet tested"
+    "notTested": "Not yet tested",
+    "tabJuz": "Juz",
+    "tabSuras": "Suras"
   },
   "auth": {
     "heroTitle": "Quran Quiz Net",

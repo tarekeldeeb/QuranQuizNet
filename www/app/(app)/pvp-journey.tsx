@@ -59,7 +59,7 @@ export default function PvpJourneyScreen() {
   return (
     <SafeAreaView style={[s.container, { backgroundColor: colors.paper }]} edges={['top', 'bottom']}>
       <View style={[s.header, { borderColor: colors.line, flexDirection: rowDir(isRTL) }]}>
-        <PressScale onPress={() => router.back()} hitSlop={10} style={s.backBtn}>
+        <PressScale onPress={() => router.navigate('/(app)/me')} hitSlop={10} style={s.backBtn}>
           <Ionicons name={mirror(isRTL, 'chevron-back', 'chevron-forward')} size={22} color={colors.ink} />
         </PressScale>
         <Text style={[s.title, { color: colors.ink, fontFamily: 'Amiri-Regular' }]}>{t('pvpJourney.title')}</Text>

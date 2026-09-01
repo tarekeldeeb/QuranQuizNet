@@ -125,7 +125,8 @@
     "reloginBody": "Pour des raisons de sécurité, déconnecte-toi puis reconnecte-toi avant de supprimer ton compte.",
     "errorTitle": "Erreur",
     "errorBody": "Échec de la suppression du compte. Réessaie plus tard.",
-    "version": "Version {{version}}"
+    "version": "Version {{version}}",
+    "title": "Paramètres"
   },
   "me": {
     "duration": {
@@ -361,7 +362,9 @@
     "filterGood": "Bon",
     "filterWeak": "Faible",
     "correctOf": "{{correct}} correctes sur {{questions}}",
-    "notTested": "Pas encore testé"
+    "notTested": "Pas encore testé",
+    "tabJuz": "Juz",
+    "tabSuras": "Sourates"
   },
   "auth": {
     "heroTitle": "Réseau de Quiz du Coran",

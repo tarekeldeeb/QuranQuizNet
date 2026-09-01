@@ -125,7 +125,8 @@
     "reloginBody": "নিরাপত্তার কারণে, অ্যাকাউন্ট মুছার আগে সাইন আউট করে আবার সাইন ইন করুন।",
     "errorTitle": "ত্রুটি",
     "errorBody": "অ্যাকাউন্ট মুছতে ব্যর্থ হয়েছে। পরে আবার চেষ্টা করুন।",
-    "version": "সংস্করণ {{version}}"
+    "version": "সংস্করণ {{version}}",
+    "title": "সেটিংস"
   },
   "me": {
     "duration": {
@@ -358,7 +359,9 @@
     "filterGood": "ভালো",
     "filterWeak": "দুর্বল",
     "correctOf": "{{questions}}টির মধ্যে {{correct}}টি সঠিক",
-    "notTested": "এখনো পরীক্ষা করা হয়নি"
+    "notTested": "এখনো পরীক্ষা করা হয়নি",
+    "tabJuz": "জুজ",
+    "tabSuras": "সূরা"
   },
   "auth": {
     "heroTitle": "কুরআন কুইজ নেট",
